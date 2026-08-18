@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% set active = 'runs' %}
+{% block title %}Production Runs · Monitoring System{% endblock %}
+{% block page_title %}Production Runs{% endblock %}
+
+{% block content %}
+  <div class="toolbar">
+    <div class="filters">
+      <select id="statusFilter">
+        <option value="">All runs</option>
+        <option value="running">Running</option>
+        <option value="stopped">Stopped</option>
+      </select>
+      <select id="machineFilter"><option value="">All machines</option></select>
+      <a class="btn secondary" href="/api/runs/export">⬇ Export CSV</a>
+    </div>
+    <div class="summary-pills" id="summaryPills"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="runTable">
+      <thead>
+        <tr>
+          <th>Started</th><th>Stopped</th><th>Run Time</th><th>Machine</th>
+          <th>Group</th><th>Product</th><th>Item</th><th>Code</th>
+          <th>Operator</th><th>M/C Status</th><th>Status</th><th>Note</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const $ = (id) => document.getElementById(id);
+  let runs = [], machines = [];
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function statusBadge(status) {
+    const meta = { running:{label:'Running',color:'#34d399'}, out_of_order:{label:'Break Down',color:'#f87171'}, maintenance:{label:'Maintenance',color:'#fbbf24'}, idle:{label:'Idle',color:'#94a3b8'} }[status] || { label: status, color: '#94a3b8' };
+    return `<span class="badge ${status}" style="background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55;">${meta.label}</span>`;
+  }
+  function machineStatusOf(id) {
+    const m = machines.find(x => String(x.id) === String(id));
+    return m ? m.status : 'idle';
+  }
+
+  // Build the machine filter dropdown ONCE (so the auto-refresh never resets it)
+  async function loadMachines() {
+    const m = await fetch('/api/machines').then(x => x.json());
+    machines = m.machines;
+    $('machineFilter').innerHTML = '<option value="">All machines</option>' +
+      machines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }
+
+  // Refresh only the run data on the interval (preserves the user's filter selection)
+  async function loadRuns() {
+    const r = await fetch('/api/runs').then(x => x.json());
+    runs = r.runs;
+    render();
+  }
+
+  // Refresh machine statuses (for the M/C Status column) WITHOUT rebuilding
+  // the machine filter dropdown, so the user's filter selection is preserved.
+  async function refreshMachineStatuses() {
+    const m = await fetch('/api/machines').then(x => x.json());
+    machines = m.machines;
+    render();
+  }
+
+  function render() {
+    const status = $('statusFilter').value;
+    const mid = $('machineFilter').value;
+    const list = runs.filter(r =>
+      (!status || r.status === status) &&
+      (!mid || String(r.machine_id) === String(mid))
+    );
+
+    const running = runs.filter(r => r.status === 'running').length;
+    const stopped = runs.length - running;
+    const totalSecs = runs.reduce((a, r) => a + (r.run_seconds || 0), 0);
+    const fmtTotal = (s) => {
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+      return `${h}h ${m}m`;
+    };
+    $('summaryPills').innerHTML =
+      `<span class="pill running"><span class="pill-dot" style="background:#34d399"></span>Running: <b>${running}</b></span>` +
+      `<span class="pill stopped"><span class="pill-dot" style="background:#94a3b8"></span>Stopped: <b>${stopped}</b></span>` +
+      `<span class="pill"><span class="pill-dot" style="background:#4f8cff"></span>Total Run Time: <b>${fmtTotal(totalSecs)}</b></span>`;
+
+    $('runTable').querySelector('tbody').innerHTML = list.length
+      ? list.map(r => `
+        <tr>
+          <td>${fmtTime(r.started_at)}</td>
+          <td>${fmtTime(r.stopped_at)}</td>
+          <td><b>${r.run_time}</b></td>
+          <td class="strong">${r.machine_name || '—'}</td>
+          <td>${r.group_name || '—'}</td>
+          <td>${r.product_name || '—'}</td>
+          <td>${r.item_name || '—'}</td>
+          <td>${r.item_code || '—'}</td>
+          <td>${r.operator || '—'}</td>
+          <td>${statusBadge(machineStatusOf(r.machine_id))}</td>
+          <td><span class="badge ${r.status}">${r.status === 'running' ? 'Running' : 'Stopped'}</span></td>
+          <td>${r.note || ''}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="12" class="empty">No runs found.</td></tr>';
+  }
+
+  $('statusFilter').addEventListener('change', render);
+  $('machineFilter').addEventListener('change', render);
+
+  loadMachines().then(loadRuns);
+  setInterval(loadRuns, 10000);
+  setInterval(refreshMachineStatuses, 10000);
+
+  // Live cross-tab sync: refresh when another tab changes machine status.
+  window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
+</script>
+{% endblock %}

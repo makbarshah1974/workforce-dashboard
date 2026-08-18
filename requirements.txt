@@ -1,0 +1,8 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+# PostgreSQL driver. Use ONE of the following:
+#   - psycopg (v3) is recommended and ships prebuilt wheels (no pg_config needed):
+psycopg[binary]==3.2.3
+#   - OR psycopg2-binary (classic) if you have PostgreSQL client libs / a matching wheel:
+# psycopg2-binary==2.9.9
+python-dotenv==1.0.1

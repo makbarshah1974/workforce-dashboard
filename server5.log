@@ -1,0 +1,35 @@
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.121:5000
+Press CTRL+C to quit
+127.0.0.1 - - [15/Aug/2026 16:37:21] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [15/Aug/2026 16:37:21] "POST /api/machines/bulk-start HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:37:21] "POST /api/machines/bulk-stop HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:34] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [15/Aug/2026 16:53:34] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:34] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [15/Aug/2026 16:53:45] "POST /login HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:45] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [15/Aug/2026 16:53:58] "POST /login HTTP/1.1" 302 -
+c:\Users\user\Desktop\workforce-dashboard\app.py:347: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  return User.query.get(uid)
+127.0.0.1 - - [15/Aug/2026 16:53:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:59] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [15/Aug/2026 16:53:59] "GET /api/summary HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:59] "GET /api/machines HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:53:59] "GET /api/runs HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:04] "GET /machines HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:04] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [15/Aug/2026 16:54:04] "GET /api/machines HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:04] "GET /api/runs?status=running HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:29] "POST /api/machines/bulk-stop HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:30] "GET /api/machines HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:30] "GET /api/runs?status=running HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:39] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [15/Aug/2026 16:54:39] "GET /api/machines HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:39] "GET /api/summary HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2026 16:54:39] "GET /api/runs HTTP/1.1" 200 -

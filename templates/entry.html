@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% set active = 'entry' %}
+{% block title %}Production Run · Monitoring System{% endblock %}
+{% block page_title %}Production Run Console{% endblock %}
+
+{% block content %}
+  <!-- ============ PLUG & PLAY START CONSOLE ============ -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Start a Production Run</h2>
+      <span class="muted">Pick a machine, group & product — then start</span>
+    </div>
+
+    <form id="runForm" class="console-grid">
+      <div class="field">
+        <label for="machine">Machine</label>
+        <select id="machine" required>
+          <option value="">— select machine —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="group">Product Group</label>
+        <select id="group" required>
+          <option value="">— select group —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="product">Product</label>
+        <select id="product">
+          <option value="">— none —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="itemName">Item Name</label>
+        <input id="itemName" list="itemNameList" placeholder="e.g. Bearing Assy" autocomplete="off" />
+        <datalist id="itemNameList"></datalist>
+      </div>
+
+      <div class="field">
+        <label for="itemCode">Item Code</label>
+        <input id="itemCode" list="itemCodeList" placeholder="e.g. BRG-001" autocomplete="off" />
+        <datalist id="itemCodeList"></datalist>
+      </div>
+
+      <div class="field">
+        <label for="note">Note</label>
+        <input id="note" placeholder="Optional note" autocomplete="off" />
+      </div>
+    </form>
+
+    <div class="console-actions">
+      <button class="btn" id="startBtn">▶ Start Run</button>
+      <button class="btn secondary" type="button" id="resetBtn">Clear</button>
+      <span class="muted" id="formHint"></span>
+    </div>
+  </section>
+
+  <!-- ============ ACTIVE (RUNNING) RUNS ============ -->
+  <div class="section-title">Live Runs</div>
+  <div class="run-grid" id="activeGrid"></div>
+
+  <!-- ============ RECENT RUNS ============ -->
+  <div class="section-title">Recent Runs</div>
+  <div class="table-wrap">
+    <table id="runTable">
+      <thead>
+        <tr>
+          <th>Started</th><th>Machine</th><th>Group</th><th>Product</th>
+          <th>Item</th><th>Code</th><th>Operator</th><th>Run Time</th><th>M/C Status</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const $ = (id) => document.getElementById(id);
+  let machines = [], groups = [], products = [], runs = [];
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fmtDuration(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+  function statusBadge(status) {
+    const meta = { running:{label:'Running',color:'#34d399'}, out_of_order:{label:'Break Down',color:'#f87171'}, maintenance:{label:'Maintenance',color:'#fbbf24'}, idle:{label:'Idle',color:'#94a3b8'} }[status] || { label: status, color: '#94a3b8' };
+    return `<span class="badge ${status}" style="background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55;">${meta.label}</span>`;
+  }
+  function machineStatusOf(id) {
+    const m = machines.find(x => String(x.id) === String(id));
+    return m ? m.status : 'idle';
+  }
+
+  async function loadAll() {
+    const [m, g, p, r] = await Promise.all([
+      fetch('/api/machines').then(x => x.json()),
+      fetch('/api/groups').then(x => x.json()),
+      fetch('/api/products').then(x => x.json()),
+      fetch('/api/runs').then(x => x.json()),
+    ]);
+    machines = m.machines; groups = g.groups; products = p.products; runs = r.runs;
+    populateSelects();
+    renderActive();
+    renderTable();
+  }
+
+  // Refresh only machine statuses (for live badges) WITHOUT touching the
+  // run-console form selections. Used by the cross-tab sync + periodic poll.
+  async function refreshMachineStatuses() {
+    const m = await fetch('/api/machines').then(x => x.json());
+    machines = m.machines;
+    renderActive();
+    renderTable();
+  }
+
+  function populateSelects() {
+    $('machine').innerHTML = '<option value="">— select machine —</option>' +
+      machines.map(m => `<option value="${m.id}">${m.name} (${m.code || '—'})</option>`).join('');
+    $('group').innerHTML = '<option value="">— select group —</option>' +
+      groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    refreshProducts();
+    refreshItemLists();
+  }
+
+  function refreshProducts() {
+    const gid = $('group').value;
+    const list = gid ? products.filter(p => String(p.group_id) === gid) : products;
+    $('product').innerHTML = '<option value="">— none —</option>' +
+      list.map(p => `<option value="${p.id}">${p.name}${p.code ? ' (' + p.code + ')' : ''}</option>`).join('');
+  }
+
+  function refreshItemLists() {
+    const names = [...new Set(runs.map(r => r.item_name).filter(Boolean))];
+    const codes = [...new Set(runs.map(r => r.item_code).filter(Boolean))];
+    $('itemNameList').innerHTML = names.map(n => `<option value="${n}">`).join('');
+    $('itemCodeList').innerHTML = codes.map(c => `<option value="${c}">`).join('');
+  }
+
+  // When a machine is chosen, auto-select its group + product
+  function onMachineChange() {
+    const m = machines.find(x => String(x.id) === $('machine').value);
+    if (m) {
+      if (m.group_id) { $('group').value = m.group_id; refreshProducts(); }
+      if (m.product_id) $('product').value = m.product_id;
+    }
+  }
+
+  function renderActive() {
+    const active = runs.filter(r => r.status === 'running');
+    $('activeGrid').innerHTML = active.length
+      ? active.map(r => `
+        <div class="run-card running" data-id="${r.id}">
+          <div class="rc-top">
+            <div>
+              <div class="rc-name">${r.machine_name || 'Machine'}</div>
+              <div class="mc-code">${r.item_name || '—'} ${r.item_code ? '· ' + r.item_code : ''}</div>
+            </div>
+            <span class="badge running">Running</span>
+            ${statusBadge(machineStatusOf(r.machine_id))}
+          </div>
+          <div class="rc-meta">
+            <span>Group: <b>${r.group_name || '—'}</b></span>
+            <span>Product: <b>${r.product_name || '—'}</b></span>
+            <span>Operator: <b>${r.operator || '—'}</b></span>
+          </div>
+          <div class="rc-foot">
+            <span class="run-timer" data-start="${r.started_at}">00:00:00</span>
+            <button class="btn small stop-btn" data-id="${r.id}">■ Stop</button>
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No active runs. Start one above.</div>';
+
+    document.querySelectorAll('.stop-btn').forEach(b =>
+      b.addEventListener('click', () => stopRun(b.dataset.id)));
+    tickTimers();
+  }
+
+  function renderTable() {
+    const recent = runs.filter(r => r.status !== 'running').slice(0, 25);
+    $('runTable').querySelector('tbody').innerHTML = recent.length
+      ? recent.map(r => `
+        <tr>
+          <td>${fmtTime(r.started_at)}</td>
+          <td class="strong">${r.machine_name || '—'}</td>
+          <td>${r.group_name || '—'}</td>
+          <td>${r.product_name || '—'}</td>
+          <td>${r.item_name || '—'}</td>
+          <td>${r.item_code || '—'}</td>
+          <td>${r.operator || '—'}</td>
+          <td><b>${r.run_time}</b></td>
+          <td>${statusBadge(machineStatusOf(r.machine_id))}</td>
+          <td><span class="badge stopped">Stopped</span></td>
+          <td>${r.note || ''}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="11" class="empty">No runs yet.</td></tr>';
+  }
+
+  // Live ticking timers for running runs
+  function tickTimers() {
+    document.querySelectorAll('.run-timer[data-start]').forEach(el => {
+      const start = new Date(el.dataset.start).getTime();
+      el.textContent = fmtDuration((Date.now() - start) / 1000);
+    });
+  }
+
+  async function startRun(e) {
+    e.preventDefault();
+    const machine_id = $('machine').value;
+    if (!machine_id) { showToast('Select a machine first'); return; }
+    const payload = {
+      machine_id: parseInt(machine_id, 10),
+      group_id: $('group').value ? parseInt($('group').value, 10) : null,
+      product_id: $('product').value ? parseInt($('product').value, 10) : null,
+      item_name: $('itemName').value.trim(),
+      item_code: $('itemCode').value.trim(),
+      note: $('note').value.trim(),
+    };
+    const res = await fetch('/api/run/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      showToast('Run started');
+      $('itemName').value = ''; $('itemCode').value = ''; $('note').value = '';
+      loadAll();
+    } else {
+      showToast('Failed to start run');
+    }
+  }
+
+  async function stopRun(id) {
+    const res = await fetch('/api/run/stop/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (res.ok) { showToast('Run stopped'); loadAll(); }
+    else showToast('Stop failed');
+  }
+
+  $('machine').addEventListener('change', onMachineChange);
+  $('group').addEventListener('change', refreshProducts);
+  $('startBtn').addEventListener('click', startRun);
+  $('resetBtn').addEventListener('click', () => $('runForm').reset());
+
+  loadAll();
+  setInterval(tickTimers, 1000);
+  setInterval(refreshMachineStatuses, 10000);
+
+  // Live cross-tab sync: refresh when another tab changes machine status.
+  window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set active = 'reports' %}
+{% block title %}Reports · Monitoring System{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+  <div class="toolbar">
+    <div class="filters">
+      <label class="inline">From <input type="date" id="fromDate" /></label>
+      <label class="inline">To <input type="date" id="toDate" /></label>
+      <select id="statusFilter">
+        <option value="">All transitions</option>
+        <option value="running">Running</option>
+        <option value="out_of_order">Break Down</option>
+        <option value="maintenance">Maintenance</option>
+        <option value="idle">Idle</option>
+      </select>
+      <input type="search" id="searchBox" placeholder="Search machine / note…" />
+      <button class="btn" id="applyBtn">Apply</button>
+      <button class="btn secondary" id="exportBtn">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="grid grid-4" id="reportKpis"></div>
+
+  <div class="section-title">Status Change Log</div>
+  <div class="table-wrap">
+    <table id="reportTable">
+      <thead>
+        <tr><th>Time</th><th>Machine</th><th>From</th><th>To</th><th>By</th><th>Note</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const STATUS_META = {
+    running:      { label: 'Running',     cls: 'running' },
+    out_of_order: { label: 'Break Down', cls: 'out_of_order' },
+    maintenance:  { label: 'Maintenance', cls: 'maintenance' },
+    idle:         { label: 'Idle',        cls: 'idle' },
+  };
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function params() {
+    const f = $('fromDate').value, t = $('toDate').value;
+    const s = $('statusFilter').value, q = $('searchBox').value.trim();
+    const p = new URLSearchParams();
+    if (f) p.set('date_from', f);
+    if (t) p.set('date_to', t);
+    if (s) p.set('status', s);
+    if (q) p.set('search', q);
+    return p.toString();
+  }
+  async function loadReports() {
+    const res = await fetch('/api/reports?' + params());
+    const data = await res.json();
+    const events = data.events || [];
+
+    const summary = data.summary || {};
+    const summaryRows = Object.entries(summary)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    const kpis = [
+      { label: 'Total Changes', value: data.count || 0, cls: 'accent' },
+      ...summaryRows.map(([k, v], i) => ({
+        label: k, value: v, cls: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'][i % 6]
+      })),
+    ];
+    $('reportKpis').innerHTML = kpis.map(k =>
+      `<div class="card ${k.cls}"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`
+    ).join('');
+
+    $('reportTable').querySelector('tbody').innerHTML = events.length
+      ? events.map(l => `
+        <tr>
+          <td>${fmtTime(l.timestamp)}</td>
+          <td class="strong">${l.machine_name || '—'}${l.machine_code ? ' · ' + l.machine_code : ''}</td>
+          <td><span class="badge ${l.from_status || ''}">${STATUS_META[l.from_status]?.label || l.from_status || '—'}</span></td>
+          <td><span class="badge ${l.to_status}">${STATUS_META[l.to_status]?.label || l.to_status}</span></td>
+          <td>${l.updated_by || '—'}</td>
+          <td>${l.note || '—'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="empty">No records in range.</td></tr>';
+  }
+  const $ = (id) => document.getElementById(id);
+  $('applyBtn').addEventListener('click', loadReports);
+  $('statusFilter').addEventListener('change', loadReports);
+  $('searchBox').addEventListener('input', loadReports);
+  $('exportBtn').addEventListener('click', () => {
+    window.location.href = '/api/reports/export?' + params();
+  });
+  loadReports();
+</script>
+{% endblock %}

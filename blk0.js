@@ -1,0 +1,178 @@
+
+  const STATUS_META = {
+    running:      { label: 'Running',      color: '#34d399' },
+    out_of_order: { label: 'Break Down', color: '#f87171' },
+    maintenance:  { label: 'Maintenance',  color: '#fbbf24' },
+    idle:         { label: 'Idle',         color: '#94a3b8' },
+    running:      { label: 'Running',      color: '#38bdf8' },
+  };
+
+  let machines = [];
+  let currentId = null;
+  let runningIds = new Set();
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  async function loadMachines() {
+    const [mRes, rRes] = await Promise.all([
+      fetch('/api/machines'),
+      fetch('/api/runs?status=running'),
+    ]);
+    const mData = await mRes.json();
+    const rData = await rRes.json();
+    machines = mData.machines;
+    runningIds = new Set((rData.runs || []).map(r => r.machine_id));
+    render();
+  }
+
+  function render() {
+    const filter = $('statusFilter').value;
+    const q = $('searchBox').value.trim().toLowerCase();
+    const list = machines.filter(m =>
+      (!filter || m.status === filter) &&
+      (!q || m.name.toLowerCase().includes(q) || (m.code || '').toLowerCase().includes(q))
+    );
+
+    // Summary pills
+    const counts = { running: 0, out_of_order: 0, maintenance: 0, idle: 0, running: 0 };
+    machines.forEach(m => counts[m.status] = (counts[m.status] || 0) + 1);
+    $('summaryPills').innerHTML = Object.entries(counts).map(([s, c]) =>
+      `<span class="pill ${s}"><span class="pill-dot" style="background:${STATUS_META[s].color}"></span>${STATUS_META[s].label}: <b>${c}</b></span>`
+    ).join('');
+
+    $('machineGrid').innerHTML = list.length
+      ? list.map(m => `
+        <div class="machine-card status-${m.status}">
+          <div class="mc-top">
+            <div>
+              <div class="mc-name">${m.name}</div>
+              <div class="mc-code">${m.code || ''} · ${m.location || '—'}</div>
+            </div>
+            <span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span>
+          </div>
+          <div class="mc-meta">
+            <span>Group: <b>${m.group_name || '—'}</b></span>
+            <span>Product: <b>${m.product_name || '—'}</b></span>
+          </div>
+          <div class="mc-foot">
+            <span class="mc-updated">${m.updated_by || '—'} · ${fmtTime(m.updated_at)}</span>
+            <div style="display:flex; gap:0.4rem;">
+              ${runningIds.has(m.id)
+                ? `<button class="btn small run-stop" data-id="${m.id}">■ Stop</button>`
+                : `<button class="btn small run-start" data-id="${m.id}">▶ Start</button>`}
+              <button class="btn small" data-id="${m.id}">Update</button>
+            </div>
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No machines match.</div>';
+
+    document.querySelectorAll('.machine-card .btn.small').forEach(btn =>
+      btn.addEventListener('click', () => openModal(parseInt(btn.dataset.id, 10))));
+    document.querySelectorAll('.machine-card .run-start').forEach(btn =>
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openRunModal(parseInt(btn.dataset.id, 10)); }));
+    document.querySelectorAll('.machine-card .run-stop').forEach(btn =>
+      btn.addEventListener('click', (e) => { e.stopPropagation(); stopRun(parseInt(btn.dataset.id, 10)); }));
+  }
+
+  function openModal(id) {
+    const m = machines.find(x => x.id === id);
+    if (!m) return;
+    currentId = id;
+    $('modalTitle').textContent = 'Update · ' + m.name;
+    $('modalStatus').value = m.status;
+    $('modalNote').value = m.notes || '';
+    $('modalMeta').textContent = `Group: ${m.group_name || '—'} · Product: ${m.product_name || '—'}`;
+    $('modalOverlay').classList.add('show');
+  }
+  function closeModal() { $('modalOverlay').classList.remove('show'); currentId = null; }
+
+  // ---- Quick start-run modal ----
+  let runId = null;
+  async function openRunModal(id) {
+    const m = machines.find(x => x.id === id);
+    if (!m) return;
+    runId = id;
+    $('runModalTitle').textContent = 'Start Run · ' + m.name;
+    $('runItemName').value = '';
+    $('runItemCode').value = '';
+    $('runNote').value = '';
+    $('runModalOverlay').classList.add('show');
+  }
+  function closeRunModal() { $('runModalOverlay').classList.remove('show'); runId = null; }
+  async function startRunFromModal() {
+    if (runId == null) return;
+    const payload = {
+      machine_id: runId,
+      item_name: $('runItemName').value.trim(),
+      item_code: $('runItemCode').value.trim(),
+      note: $('runNote').value.trim(),
+    };
+    const res = await fetch('/api/run/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (res.ok) { showToast('Run started'); broadcastMachineChange(); closeRunModal(); loadMachines(); }
+    else showToast('Failed to start');
+  }
+
+  async function stopRun(id) {
+    const res = await fetch('/api/run/stop/' + id, { method: 'POST' });
+    if (res.ok) { showToast('Run stopped'); broadcastMachineChange(); loadMachines(); }
+    else showToast('Failed to stop');
+  }
+
+  async function saveUpdate() {
+    if (currentId == null) return;
+    const payload = { status: $('modalStatus').value, note: $('modalNote').value };
+    const res = await fetch('/api/machine/' + currentId + '/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      showToast('Machine updated');
+      closeModal();
+      broadcastMachineChange();
+      loadMachines();
+    } else {
+      showToast('Update failed');
+    }
+  }
+
+  const $ = (id) => document.getElementById(id);
+  $('statusFilter').addEventListener('change', render);
+  $('searchBox').addEventListener('input', render);
+  $('modalClose').addEventListener('click', closeModal);
+  $('modalCancel').addEventListener('click', closeModal);
+  $('modalSave').addEventListener('click', saveUpdate);
+  $('modalOverlay').addEventListener('click', (e) => { if (e.target === $('modalOverlay')) closeModal(); }));
+  $('runModalClose').addEventListener('click', closeRunModal);
+  $('runModalCancel').addEventListener('click', closeRunModal);
+  $('runModalStart').addEventListener('click', startRunFromModal);
+  $('runModalOverlay').addEventListener('click', (e) => { if (e.target === $('runModalOverlay')) closeRunModal(); }));
+
+  // ---- Bulk start / stop all machines ----
+  async function bulkStart() {
+    const res = await fetch('/api/machines/bulk-start', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) { showToast(`Started ${data.updated || 0} machine(s)`); broadcastMachineChange(); loadMachines(); }
+    else showToast('Bulk start failed');
+  }
+  async function bulkStop() {
+    const res = await fetch('/api/machines/bulk-stop', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) { showToast(`Stopped ${data.updated || 0} machine(s)`); broadcastMachineChange(); loadMachines(); }
+    else showToast('Bulk stop failed');
+  }
+  $('bulkStartBtn').addEventListener('click', bulkStart);
+  $('bulkStopBtn').addEventListener('click', bulkStop);
+
+  loadMachines();
+
+  // Live cross-tab sync: reload when another tab changes machine status.
+  window.addEventListener('wf:machines-changed', () => loadMachines());

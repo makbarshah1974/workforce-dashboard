@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workforce & Machine Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="layout">
+    <!-- ===================== SIDEBAR (fixed on desktop, drawer on mobile) ===================== -->
+    <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+      <div class="sidebar-brand">
+        <div class="logo">W</div>
+        <div class="brand-text">
+          <span class="brand-name">Workforce</span>
+          <span class="brand-sub">Operations Console</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item active" href="#"><span class="nav-ico">▦</span> Dashboard</a>
+        <a class="nav-item" href="#"><span class="nav-ico">👥</span> Workforce</a>
+        <a class="nav-item" href="#"><span class="nav-ico">⚙</span> Machines</a>
+        <a class="nav-item" href="#"><span class="nav-ico">📊</span> Reports</a>
+        <a class="nav-item" href="#"><span class="nav-ico">🗓</span> Schedule</a>
+        <a class="nav-item" href="#"><span class="nav-ico">⚙</span> Settings</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user">
+          <div class="avatar">AM</div>
+          <div class="user-meta">
+            <span class="user-name">A. Manager</span>
+            <span class="user-role">Shift Supervisor</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay shown behind the drawer on mobile -->
+    <div class="sidebar-overlay" id="overlay" hidden></div>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="main">
+      <!-- Mobile top bar (sticky) -->
+      <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Open navigation" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title">
+          <h1>Executive Overview</h1>
+          <p class="topbar-sub"><span id="viewDate">2026-08-15</span> <span class="sep">•</span> <span class="shift-pill day">Day Shift</span></p>
+        </div>
+        <div class="topbar-actions">
+          <span class="live"><span class="dot"></span> Live</span>
+          <input type="date" id="datePicker" title="Pick a date" value="2026-08-15" />
+          <button class="btn" id="newEntryBtn">+ New Entry</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- ===================== KPI / METRIC CARDS ===================== -->
+        <section class="kpi-grid" aria-label="Key metrics">
+          <article class="card accent">
+            <div class="card-label">Total Workforce</div>
+            <div class="card-value">248</div>
+            <div class="card-trend up">▲ 4.2% vs last week</div>
+          </article>
+          <article class="card c1">
+            <div class="card-label">Working Machines</div>
+            <div class="card-value">32</div>
+            <div class="card-trend up">▲ 2 online today</div>
+          </article>
+          <article class="card c2">
+            <div class="card-label">Out of Order</div>
+            <div class="card-value">5</div>
+            <div class="card-trend down">▼ 1 resolved</div>
+          </article>
+          <article class="card c3">
+            <div class="card-label">Attendance Rate</div>
+            <div class="card-value">96.4%</div>
+            <div class="card-trend up">▲ 1.1% vs target</div>
+          </article>
+        </section>
+
+        <!-- ===================== WIDGETS / CHARTS (multi-column) ===================== -->
+        <section class="widgets" aria-label="Charts and widgets">
+          <!-- Bar chart widget -->
+          <article class="widget">
+            <header class="widget-head">
+              <h2>Staff by Department</h2>
+              <span class="widget-tag">Today</span>
+            </header>
+            <div class="bar-chart" role="img" aria-label="Staff by department bar chart">
+              <div class="bar" style="--h: 82%"><span class="bar-fill"></span><span class="bar-label">Metex</span><span class="bar-num">64</span></div>
+              <div class="bar" style="--h: 64%"><span class="bar-fill"></span><span class="bar-label">CSK</span><span class="bar-num">50</span></div>
+              <div class="bar" style="--h: 48%"><span class="bar-fill"></span><span class="bar-label">TopQ</span><span class="bar-num">38</span></div>
+              <div class="bar" style="--h: 40%"><span class="bar-fill"></span><span class="bar-label">Best</span><span class="bar-num">31</span></div>
+              <div class="bar" style="--h: 30%"><span class="bar-fill"></span><span class="bar-label">Prest</span><span class="bar-num">23</span></div>
+            </div>
+          </article>
+
+          <!-- Donut chart widget -->
+          <article class="widget">
+            <header class="widget-head">
+              <h2>Machine Status</h2>
+              <span class="widget-tag">Live</span>
+            </header>
+            <div class="donut-wrap">
+              <div class="donut" style="--p: 86%; --c: var(--green);">
+                <div class="donut-hole">
+                  <span class="donut-num">86%</span>
+                  <span class="donut-cap">Operational</span>
+                </div>
+              </div>
+              <ul class="legend">
+                <li><span class="lg-dot" style="background: var(--green)"></span> Running <b>32</b></li>
+                <li><span class="lg-dot" style="background: var(--red)"></span> Out of Order <b>5</b></li>
+                <li><span class="lg-dot" style="background: var(--faint)"></span> Idle <b>3</b></li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Activity list widget -->
+          <article class="widget">
+            <header class="widget-head">
+              <h2>Recent Activity</h2>
+              <span class="widget-tag">Feed</span>
+            </header>
+            <ul class="activity">
+              <li><span class="act-dot ok"></span> Shift handover completed <time>08:00</time></li>
+              <li><span class="act-dot warn"></span> Machine #14 flagged for service <time>07:42</time></li>
+              <li><span class="act-dot ok"></span> 12 loading staff checked in <time>07:30</time></li>
+              <li><span class="act-dot info"></span> Night report submitted <time>06:15</time></li>
+              <li><span class="act-dot ok"></span> 3 workers returned from leave <time>06:00</time></li>
+            </ul>
+          </article>
+        </section>
+
+        <!-- ===================== DATA TABLE ===================== -->
+        <section class="table-section" aria-label="History table">
+          <div class="section-head">
+            <h2 class="section-title">History (recent dates)</h2>
+            <button class="btn secondary">Export</button>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Shift</th>
+                  <th>Total</th>
+                  <th>Metex</th>
+                  <th>CSK</th>
+                  <th>TopQuality</th>
+                  <th>BestCare</th>
+                  <th>Prestige</th>
+                  <th>Running</th>
+                  <th>Out of Order</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>2026-08-15</td><td>Day</td><td>248</td><td>64</td><td>50</td><td>38</td><td>31</td><td>23</td><td>32</td><td>5</td></tr>
+                <tr><td>2026-08-14</td><td>Night</td><td>231</td><td>60</td><td>47</td><td>35</td><td>29</td><td>21</td><td>30</td><td>6</td></tr>
+                <tr><td>2026-08-14</td><td>Day</td><td>245</td><td>63</td><td>49</td><td>37</td><td>30</td><td>22</td><td>31</td><td>5</td></tr>
+                <tr><td>2026-08-13</td><td>Night</td><td>228</td><td>58</td><td>46</td><td>34</td><td>28</td><td>20</td><td>29</td><td>7</td></tr>
+                <tr><td>2026-08-13</td><td>Day</td><td>250</td><td>65</td><td>51</td><td>38</td><td>31</td><td>23</td><td>33</td><td>4</td></tr>
+                <tr><td>2026-08-12</td><td>Night</td><td>226</td><td>57</td><td>45</td><td>33</td><td>28</td><td>20</td><td>28</td><td>8</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================== FORM (stacks on mobile) ===================== -->
+        <section class="form-section" aria-label="Quick entry form">
+          <h2 class="section-title">Quick Entry</h2>
+          <form class="entry-form" onsubmit="return false;">
+            <div class="form-grid">
+              <div class="field">
+                <label for="f-date">Date</label>
+                <input type="date" id="f-date" value="2026-08-15" />
+              </div>
+              <div class="field">
+                <label for="f-shift">Shift</label>
+                <select id="f-shift">
+                  <option>Day</option>
+                  <option>Night</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-total">Total Workforce</label>
+                <input type="number" id="f-total" placeholder="0" value="248" />
+              </div>
+              <div class="field">
+                <label for="f-working">Working Machines</label>
+                <input type="number" id="f-working" placeholder="0" value="32" />
+              </div>
+              <div class="field">
+                <label for="f-broken">Out of Order</label>
+                <input type="number" id="f-broken" placeholder="0" value="5" />
+              </div>
+              <div class="field">
+                <label for="f-note">Note</label>
+                <input type="text" id="f-note" placeholder="Optional note…" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="reset" class="btn secondary">Clear</button>
+              <button type="submit" class="btn">Save Entry</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('overlay');
+      var hamburger = document.getElementById('hamburger');
+
+      function openDrawer() {
+        sidebar.classList.add('open');
+        overlay.hidden = false;
+        requestAnimationFrame(function () { overlay.classList.add('show'); });
+        hamburger.setAttribute('aria-expanded', 'true');
+      }
+      function closeDrawer() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+        hamburger.setAttribute('aria-expanded', 'false');
+        setTimeout(function () { overlay.hidden = true; }, 250);
+      }
+      hamburger.addEventListener('click', function () {
+        if (sidebar.classList.contains('open')) closeDrawer(); else openDrawer();
+      });
+      overlay.addEventListener('click', closeDrawer);
+      // Close drawer when a nav link is tapped on mobile
+      sidebar.querySelectorAll('.nav-item').forEach(function (a) {
+        a.addEventListener('click', function () {
+          if (window.matchMedia('(max-width: 768px)').matches) closeDrawer();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

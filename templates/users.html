@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="users-wrap">
+  <!-- ===================== CREATE / EDIT USER CARD ===================== -->
+  <section class="card user-form-card">
+    <div class="card-head">
+      <h2 id="formTitle">Add New User</h2>
+      <button class="btn ghost" id="resetFormBtn" style="display:none" onclick="resetForm()">+ New</button>
+    </div>
+
+    <form id="userForm" class="user-form" autocomplete="off">
+      <input type="hidden" id="editId" value="" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="username">Username <span class="req">*</span></label>
+          <input type="text" id="username" placeholder="e.g. jdoe" required />
+        </div>
+        <div class="field">
+          <label for="display_name">Display Name</label>
+          <input type="text" id="display_name" placeholder="e.g. John Doe" />
+        </div>
+        <div class="field">
+          <label for="role">Role</label>
+          <select id="role">
+            <option value="operator">Operator</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="password">Password <span class="req">*</span></label>
+          <input type="password" id="password" placeholder="min 4 characters" required />
+          <small class="hint" id="pwHint">Required for new users. Leave blank to keep current password when editing.</small>
+        </div>
+      </div>
+
+      <!-- ===================== PAGE ACCESS CONTROL ===================== -->
+      <div class="perm-block">
+        <div class="perm-head">
+          <span class="perm-title">Page Access Control</span>
+          <div class="perm-quick">
+            <button type="button" class="chip" onclick="setAllPerms(true)">Allow All</button>
+            <button type="button" class="chip" onclick="setAllPerms(false)">Restrict All</button>
+          </div>
+        </div>
+        <div class="perm-grid" id="permGrid">
+          {% for key, label in PAGE_KEYS %}
+          <label class="perm-item">
+            <input type="checkbox" class="perm-cb" value="{{ key }}" checked />
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="perm-note">Admins always have full access regardless of these toggles.</p>
+      </div>
+
+      <div class="form-actions">
+        <label class="switch">
+          <input type="checkbox" id="is_active" checked />
+          <span>Account active</span>
+        </label>
+        <div class="spacer"></div>
+        <button type="button" class="btn secondary" onclick="resetForm()">Cancel</button>
+        <button type="submit" class="btn" id="saveBtn">Create User</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===================== USERS TABLE ===================== -->
+  <section class="card">
+    <div class="card-head">
+      <h2>All Users</h2>
+      <input type="text" id="userSearch" class="search-input" placeholder="Search users..." oninput="renderUsers()" />
+    </div>
+    <div class="table-scroll">
+      <table class="data-table users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Page Access</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody">
+          <tr><td colspan="5" class="empty">Loading users...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ===================== EDIT PERMISSIONS MODAL ===================== -->
+<div class="modal-overlay" id="permModal" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="permModalTitle">Edit Access — User</h3>
+      <button class="modal-close" onclick="closePermModal()">×</button>
+    </div>
+    <div class="perm-grid" id="modalPermGrid"></div>
+    <div class="modal-foot">
+      <button class="btn secondary" onclick="closePermModal()">Cancel</button>
+      <button class="btn" onclick="saveModalPerms()">Save Access</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PAGE_KEYS = {{ PAGE_KEYS | tojson }};
+  let users = [];
+  let modalUid = null;
+  let modalPerms = [];
+
+  // ---- Load users ----
+  async function loadUsers() {
+    const r = await fetch("/api/users");
+    const data = await r.json();
+    users = data.users || [];
+    renderUsers();
+  }
+
+  function roleBadge(role) {
+    const cls = role === "admin" ? "badge-admin" : role === "supervisor" ? "badge-sup" : "badge-op";
+    return `<span class="badge ${cls}">${role}</span>`;
+  }
+
+  function statusBadge(active) {
+    return active
+      ? `<span class="badge badge-on">Active</span>`
+      : `<span class="badge badge-off">Disabled</span>`;
+  }
+
+  function permChips(perms) {
+    if (!perms || perms.length === 0) return `<span class="muted">No access</span>`;
+    return perms.map(p => {
+      const label = (PAGE_KEYS.find(k => k[0] === p) || [null, p])[1];
+      return `<span class="perm-pill">${label}</span>`;
+    }).join(" ");
+  }
+
+  function renderUsers() {
+    const q = (document.getElementById("userSearch").value || "").toLowerCase();
+    const body = document.getElementById("usersBody");
+    const filtered = users.filter(u =>
+      u.username.toLowerCase().includes(q) || (u.display_name || "").toLowerCase().includes(q));
+    if (filtered.length === 0) {
+      body.innerHTML = `<tr><td colspan="5" class="empty">No users found</td></tr>`;
+      return;
+    }
+    body.innerHTML = filtered.map(u => `
+      <tr>
+        <td>
+          <div class="user-cell">
+            <div class="avatar sm">${(u.display_name || u.username)[0].toUpperCase()}</div>
+            <div>
+              <div class="u-name">${u.display_name || u.username}</div>
+              <div class="u-sub">@${u.username}</div>
+            </div>
+          </div>
+        </td>
+        <td>${roleBadge(u.role)}</td>
+        <td>${statusBadge(u.is_active)}</td>
+        <td class="perm-cell">${permChips(u.permissions)}</td>
+        <td class="actions-col">
+          <button class="icon-btn" title="Edit" onclick="editUser(${u.id})">✎</button>
+          <button class="icon-btn" title="Access" onclick="openPermModal(${u.id})">🔐</button>
+          <button class="icon-btn danger" title="Delete" onclick="deleteUser(${u.id})">🗑</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // ---- Form: create / update ----
+  function getCheckedPerms() {
+    return Array.from(document.querySelectorAll(".perm-cb:checked")).map(cb => cb.value);
+  }
+
+  function setAllPerms(on) {
+    document.querySelectorAll(".perm-cb").forEach(cb => cb.checked = on);
+  }
+
+  function resetForm() {
+    document.getElementById("editId").value = "";
+    document.getElementById("username").value = "";
+    document.getElementById("display_name").value = "";
+    document.getElementById("role").value = "operator";
+    document.getElementById("password").value = "";
+    document.getElementById("is_active").checked = true;
+    setAllPerms(true);
+    document.getElementById("formTitle").textContent = "Add New User";
+    document.getElementById("saveBtn").textContent = "Create User";
+    document.getElementById("resetFormBtn").style.display = "none";
+    document.getElementById("pwHint").textContent = "Required for new users. Leave blank to keep current password when editing.";
+    document.getElementById("password").required = true;
+  }
+
+  function editUser(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById("editId").value = u.id;
+    document.getElementById("username").value = u.username;
+    document.getElementById("display_name").value = u.display_name || "";
+    document.getElementById("role").value = u.role;
+    document.getElementById("password").value = "";
+    document.getElementById("is_active").checked = u.is_active;
+    setAllPerms(false);
+    (u.permissions || []).forEach(p => {
+      const cb = document.querySelector(`.perm-cb[value="${p}"]`);
+      if (cb) cb.checked = true;
+    });
+    document.getElementById("formTitle").textContent = "Edit User — " + (u.display_name || u.username);
+    document.getElementById("saveBtn").textContent = "Update User";
+    document.getElementById("resetFormBtn").style.display = "inline-block";
+    document.getElementById("pwHint").textContent = "Leave blank to keep the current password.";
+    document.getElementById("password").required = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.getElementById("userForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("editId").value;
+    const payload = {
+      username: document.getElementById("username").value.trim(),
+      display_name: document.getElementById("display_name").value.trim(),
+      role: document.getElementById("role").value,
+      password: document.getElementById("password").value,
+      is_active: document.getElementById("is_active").checked,
+      permissions: getCheckedPerms(),
+    };
+    if (!id && !payload.password) {
+      showToast("Password is required for new users");
+      return;
+    }
+    const btn = document.getElementById("saveBtn");
+    btn.disabled = true;
+    try {
+      let res;
+      if (id) {
+        res = await fetch("/api/users/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Failed to save user");
+      } else {
+        showToast(id ? "User updated" : "User created");
+        resetForm();
+        await loadUsers();
+      }
+    } catch (err) {
+      showToast("Network error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- Delete ----
+  async function deleteUser(id) {
+    const u = users.find(x => x.id === id);
+    if (!confirm(`Delete user "${u.display_name || u.username}"? This cannot be undone.`)) return;
+    const res = await fetch("/api/users/" + id, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Delete failed");
+    } else {
+      showToast("User deleted");
+      await loadUsers();
+    }
+  }
+
+  // ---- Permission modal ----
+  function openPermModal(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    modalUid = id;
+    modalPerms = (u.permissions || []).slice();
+    document.getElementById("permModalTitle").textContent = "Edit Access — " + (u.display_name || u.username);
+    const grid = document.getElementById("modalPermGrid");
+    grid.innerHTML = PAGE_KEYS.map(([key, label]) => `
+      <label class="perm-item">
+        <input type="checkbox" class="modal-perm-cb" value="${key}" ${modalPerms.includes(key) ? "checked" : ""} />
+        <span>${label}</span>
+      </label>
+    `).join("");
+    document.getElementById("permModal").style.display = "flex";
+  }
+
+  function closePermModal() {
+    document.getElementById("permModal").style.display = "none";
+    modalUid = null;
+  }
+
+  async function saveModalPerms() {
+    const perms = Array.from(document.querySelectorAll(".modal-perm-cb:checked")).map(cb => cb.value);
+    const res = await fetch("/api/users/" + modalUid, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ permissions: perms }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Failed to update access");
+    } else {
+      showToast("Access updated");
+      closePermModal();
+      await loadUsers();
+    }
+  }
+
+  // close modal on overlay click
+  document.getElementById("permModal").addEventListener("click", (e) => {
+    if (e.target.id === "permModal") closePermModal();
+  });
+
+  loadUsers();
+</script>
+{% endblock %}

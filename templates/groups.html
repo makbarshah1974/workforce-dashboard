@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set active = 'groups' %}
+{% block title %}Groups · Monitoring System{% endblock %}
+{% block page_title %}Groups{% endblock %}
+
+{% block content %}
+  <div class="grid grid-3" id="groupGrid"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function loadGroups() {
+    const res = await fetch('/api/groups');
+    const data = await res.json();
+    $('groupGrid').innerHTML = data.groups.length
+      ? data.groups.map(g => `
+        <div class="card c5">
+          <div class="label">${g.name}</div>
+          <div class="group-desc">${g.description || '—'}</div>
+          <div class="group-stats">
+            <span class="gs running">${g.by_status.running} running</span>
+            <span class="gs out">${g.by_status.out_of_order} down</span>
+            <span class="gs maint">${g.by_status.maintenance} maint.</span>
+            <span class="gs idle">${g.by_status.idle} idle</span>
+          </div>
+          <div class="group-foot">
+            <span>${g.machine_count} machines</span>
+            <span>${g.product_count} products</span>
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No groups yet.</div>';
+  }
+  const $ = (id) => document.getElementById(id);
+  loadGroups();
+</script>
+{% endblock %}

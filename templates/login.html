@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% set active = '' %}
+{% block title %}Sign In · Production Monitoring System{% endblock %}
+{% block page_title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo">W</div>
+      <div>
+        <h1>Production Monitoring System</h1>
+      </div>
+    </div>
+    <p class="sub">Live machine & workforce monitoring</p>
+
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}" id="loginForm" autocomplete="off">
+      <input type="hidden" name="role" id="roleInput" value="" />
+
+      <!-- STEP 1: choose your role -->
+      <div id="roleStep">
+        <label class="field-label" style="font-size:.82rem;color:var(--muted);font-weight:600;">Select your role</label>
+        <div class="role-grid" id="roleGrid">
+          {% for r in LOGIN_ROLES %}
+          <button type="button" class="role-card" data-role="{{ r[0] }}">
+            <span class="role-ico" data-icon="{{ r[0] }}"></span>
+            <span class="role-name">{{ r[1] }}</span>
+            <span class="role-desc">{{ r[2] }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <p class="hint">Choose a role to continue to sign in.</p>
+      </div>
+
+      <!-- STEP 2: enter credentials for the chosen role -->
+      <div id="credStep" style="display:none;">
+        <span class="role-pill">
+          <span id="pillIcon" data-icon=""></span>
+          <span id="pillName">Role</span>
+          <button type="button" class="role-back" id="backBtn" title="Change role">✕</button>
+        </span>
+
+        <div class="field">
+          <label for="username">User ID</label>
+          <input type="text" id="username" name="username" placeholder="Enter your user ID" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn">Sign In</button>
+        <p class="hint">Only tabs you are authorized for will be visible after login.</p>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ROLE_ICONS = { admin: '🛡', supervisor: '🧭', operator: '⚙', viewer: '👁' };
+  const ROLE_NAMES = {
+    admin: 'Administrator', supervisor: 'Supervisor', operator: 'Operator', viewer: 'Viewer'
+  };
+
+  // Paint role icons from the map
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    const key = el.getAttribute('data-icon');
+    if (ROLE_ICONS[key]) el.textContent = ROLE_ICONS[key];
+  });
+
+  const roleStep = document.getElementById('roleStep');
+  const credStep = document.getElementById('credStep');
+  const roleInput = document.getElementById('roleInput');
+  const pillName = document.getElementById('pillName');
+  const pillIcon = document.getElementById('pillIcon');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+
+  function showCreds(role) {
+    roleInput.value = role;
+    pillName.textContent = ROLE_NAMES[role] || role;
+    pillIcon.setAttribute('data-icon', role);
+    pillIcon.textContent = ROLE_ICONS[role] || '';
+    roleStep.style.display = 'none';
+    credStep.style.display = 'block';
+    usernameInput.focus();
+  }
+
+  function showRoles() {
+    roleInput.value = '';
+    credStep.style.display = 'none';
+    roleStep.style.display = 'block';
+  }
+
+  document.querySelectorAll('.role-card').forEach(btn => {
+    btn.addEventListener('click', () => showCreds(btn.getAttribute('data-role')));
+  });
+  document.getElementById('backBtn').addEventListener('click', showRoles);
+
+  // Allow Enter on the role step to pick the first role (convenience)
+  roleStep.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const first = document.querySelector('.role-card');
+      if (first) showCreds(first.getAttribute('data-role'));
+    }
+  });
+</script>
+{% endblock %}

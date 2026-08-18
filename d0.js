@@ -1,0 +1,275 @@
+
+  const STATUS_META = {
+    running:      { label: 'Running',      color: '#34d399' },
+    out_of_order: { label: 'Break Down',   color: '#f87171' },
+    maintenance:  { label: 'Maintenance',  color: '#fbbf24' },
+    idle:         { label: 'Idle',         color: '#94a3b8' },
+  };
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fmtDuration(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  async function loadSummary() {
+    const res = await fetch('/api/summary');
+    const data = await res.json();
+
+    // KPIs (skip rebuild while a dropdown is open so the refresh doesn't close it)
+    if (!$('kpiGrid').querySelector('.kpi-card.open')) {
+      $('kpiGrid').innerHTML = data.kpis.map(k => {
+        if (k.type === 'workforce') {
+          {% if user_can('workforce') %}
+          return `<a class="card kpi-card ${k.cls} kpi-link" href="/workforce" data-type="${k.type}" role="link">
+                    <div class="kpi-head">
+                      <div class="label">${k.label}</div>
+                      <span class="kpi-caret" aria-hidden="true">→</span>
+                    </div>
+                    <div class="value">${k.value}</div>
+                    <div class="kpi-hint">View workforce board</div>
+                  </a>`;
+          {% else %}
+          return `<div class="card kpi-card ${k.cls}" data-type="${k.type}" tabindex="0" role="button" aria-expanded="false">
+           <div class="kpi-head">
+             <div class="label">${k.label}</div>
+             <span class="kpi-caret" aria-hidden="true">▾</span>
+           </div>
+           <div class="value">${k.value}</div>
+           <div class="kpi-hint">Click to view list</div>
+           <div class="kpi-dropdown" hidden>
+             <div class="kpi-dropdown-inner"><div class="kpi-loading">Loading…</div></div>
+           </div>
+         </div>`;
+          {% endif %}
+        }
+        return `<div class="card kpi-card ${k.cls}" data-type="${k.type}" tabindex="0" role="button" aria-expanded="false">
+           <div class="kpi-head">
+             <div class="label">${k.label}</div>
+             <span class="kpi-caret" aria-hidden="true">▾</span>
+           </div>
+           <div class="value">${k.value}</div>
+           <div class="kpi-hint">Click to view list</div>
+           <div class="kpi-dropdown" hidden>
+             <div class="kpi-dropdown-inner"><div class="kpi-loading">Loading…</div></div>
+           </div>
+         </div>`;
+      }).join('');
+    }
+
+    // Donut
+    const bs = data.by_status;
+    const order = ['running', 'out_of_order', 'maintenance', 'idle'];
+    const total = data.total || 0;
+    let acc = 0;
+    const segs = order.map(s => {
+      const v = bs[s] || 0;
+      const frac = total ? (v / total) * 100 : 0;
+      const seg = `${STATUS_META[s].color} ${acc}% ${acc + frac}%`;
+      acc += frac;
+      return seg;
+    }).join(', ');
+    const donut = $('donut');
+    donut.style.background = total
+      ? `conic-gradient(${segs})`
+      : 'conic-gradient(#243352 0% 100%)';
+    $('donutCenter').textContent = total;
+    $('totalMachines').textContent = total + ' machines';
+
+    $('legend').innerHTML = order.map(s =>
+      `<li><span class="lg-dot" style="background:${STATUS_META[s].color}"></span>${STATUS_META[s].label}<b>${bs[s] || 0}</b></li>`
+    ).join('');
+
+    // Feed
+    $('feed').innerHTML = data.recent_logs.length
+      ? data.recent_logs.map(l => `
+        <li>
+          <span class="feed-dot" style="background:${STATUS_META[l.status]?.color || '#94a3b8'}"></span>
+          <div class="feed-body">
+            <span class="feed-title">${l.machine_name || 'Machine'} → ${STATUS_META[l.status]?.label || l.status}</span>
+            <span class="feed-meta">${l.updated_by || '—'} · ${fmtTime(l.timestamp)}</span>
+          </div>
+        </li>`).join('')
+      : '<li class="empty">No activity yet.</li>';
+
+    // Groups
+    const groups = Object.entries(data.by_group);
+    $('groupGrid').innerHTML = groups.length
+      ? groups.map(([name, st]) => `
+        <div class="card c5">
+          <div class="label">${name}</div>
+          <div class="group-stats">
+            <span class="gs running">${st.running} running</span>
+            <span class="gs out">${st.out_of_order} break down</span>
+            <span class="gs maint">${st.maintenance} maint.</span>
+            <span class="gs idle">${st.idle} idle</span>
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No groups.</div>';
+  }
+
+  // ---- KPI card dropdown: click a card to reveal its corresponding list ----
+  const kpiCache = { machines: null, products: null, groups: null };
+
+  async function getMachines() {
+    if (!kpiCache.machines) {
+      const res = await fetch('/api/machines');
+      kpiCache.machines = (await res.json()).machines;
+    }
+    return kpiCache.machines;
+  }
+  async function getProducts() {
+    if (!kpiCache.products) {
+      const res = await fetch('/api/products');
+      kpiCache.products = (await res.json()).products;
+    }
+    return kpiCache.products;
+  }
+  async function getGroups() {
+    if (!kpiCache.groups) {
+      const res = await fetch('/api/groups');
+      kpiCache.groups = (await res.json()).groups;
+    }
+    return kpiCache.groups;
+  }
+
+  async function buildKpiList(type) {
+    let items = [];
+    if (type === 'products') {
+      items = await getProducts();
+    } else if (type === 'groups') {
+      items = await getGroups();
+    } else {
+      // machine-based KPIs: total / running / out_of_order / maintenance
+      const machines = await getMachines();
+      items = type === 'total' ? machines : machines.filter(m => m.status === type);
+    }
+    if (!items.length) return '<div class="kpi-empty">No items found.</div>';
+    // Simple, flexible name list — one row per item, sized to its content
+    return '<ul class="kpi-list">' + items.map(it => `
+      <li class="kpi-li">
+        <span class="kpi-li-main">${it.name || it.code || '—'}</span>
+      </li>`).join('') + '</ul>';
+  }
+
+  async function toggleKpi(card) {
+    const type = card.dataset.type;
+    const isOpen = card.classList.contains('open');
+    // close any open dropdown first
+    document.querySelectorAll('.kpi-card.open').forEach(c => {
+      c.classList.remove('open');
+      c.setAttribute('aria-expanded', 'false');
+      c.querySelector('.kpi-dropdown').hidden = true;
+    });
+    if (isOpen) return; // was open -> just close
+    card.classList.add('open');
+    card.setAttribute('aria-expanded', 'true');
+    const dd = card.querySelector('.kpi-dropdown');
+    dd.hidden = false;
+    const inner = dd.querySelector('.kpi-dropdown-inner');
+    inner.innerHTML = '<div class="kpi-loading">Loading…</div>';
+    try {
+      inner.innerHTML = await buildKpiList(type);
+    } catch (e) {
+      inner.innerHTML = '<div class="kpi-empty">Failed to load.</div>';
+    }
+  }
+
+  function initKpiCards() {
+    const grid = $('kpiGrid');
+    grid.addEventListener('click', (e) => {
+      if (e.target.closest('.kpi-dropdown')) return; // ignore clicks inside the open list
+      const card = e.target.closest('.kpi-card');
+      if (card) toggleKpi(card);
+    });
+    grid.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const card = e.target.closest('.kpi-card');
+        if (card) { e.preventDefault(); toggleKpi(card); }
+      }
+    });
+    // close when clicking anywhere outside a card
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.kpi-card')) {
+        document.querySelectorAll('.kpi-card.open').forEach(c => {
+          c.classList.remove('open');
+          c.setAttribute('aria-expanded', 'false');
+          c.querySelector('.kpi-dropdown').hidden = true;
+        });
+      }
+    });
+  }
+
+  async function loadMachines() {
+    const res = await fetch('/api/machines');
+    const data = await res.json();
+    const tbody = $('machineTable').querySelector('tbody');
+    tbody.innerHTML = data.machines.map(m => `
+      <tr>
+        <td class="strong">${m.name}</td>
+        <td>${m.code || '—'}</td>
+        <td>${m.group_name || '—'}</td>
+        <td>${m.product_name || '—'}</td>
+        <td><span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span></td>
+        <td>${m.location || '—'}</td>
+        <td>${m.updated_by || '—'}</td>
+        <td>${fmtTime(m.updated_at)}</td>
+      </tr>`).join('');
+  }
+
+  async function loadRuns() {
+    const res = await fetch('/api/runs');
+    const data = await res.json();
+    const active = data.runs.filter(r => r.status === 'running');
+    $('activeRuns').innerHTML = active.length
+      ? active.map(r => `
+        <div class="run-card running">
+          <div class="rc-top">
+            <div>
+              <div class="rc-name">${r.machine_name || 'Machine'}</div>
+              <div class="mc-code">${r.item_name || '—'} ${r.item_code ? '· ' + r.item_code : ''}</div>
+            </div>
+            <span class="badge running">Running</span>
+          </div>
+          <div class="rc-meta">
+            <span>Group: <b>${r.group_name || '—'}</b></span>
+            <span>Product: <b>${r.product_name || '—'}</b></span>
+            <span>Operator: <b>${r.operator || '—'}</b></span>
+          </div>
+          <div class="rc-foot">
+            <span class="run-timer" data-start="${r.started_at}">00:00:00</span>
+            {% if user_can('entry') %}<a class="btn small" href="/entry">Manage</a>{% endif %}
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No active runs. {% if user_can("entry") %}<a href="/entry">Start one →</a>{% else %}Contact an operator.{% endif %}</div>';
+    tickTimers();
+  }
+
+  function tickTimers() {
+    document.querySelectorAll('.run-timer[data-start]').forEach(el => {
+      const start = new Date(el.dataset.start).getTime();
+      el.textContent = fmtDuration((Date.now() - start) / 1000);
+    });
+  }
+
+  const $ = (id) => document.getElementById(id);
+  initKpiCards();
+  loadSummary();
+  loadMachines();
+  loadRuns();
+  setInterval(() => { loadSummary(); loadMachines(); loadRuns(); }, 8000);
+  setInterval(tickTimers, 1000);
+
+  // Live cross-tab sync: refresh when another tab changes machine status.
+  window.addEventListener('wf:machines-changed', () => { loadSummary(); loadMachines(); loadRuns(); });

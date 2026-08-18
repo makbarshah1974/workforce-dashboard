@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set active = 'products' %}
+{% block title %}Products · Monitoring System{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block content %}
+  <div class="grid grid-3" id="productGrid"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function loadProducts() {
+    const res = await fetch('/api/products');
+    const data = await res.json();
+    $('productGrid').innerHTML = data.products.length
+      ? data.products.map(p => `
+        <div class="card c4">
+          <div class="label">${p.name}</div>
+          <div class="prod-code">${p.code || '—'}</div>
+          <div class="prod-meta">
+            <span>Group: <b>${p.group_name || '—'}</b></span>
+            <span>Target: <b>${p.target_qty} ${p.unit}</b></span>
+            <span>Machines: <b>${p.machine_count}</b></span>
+          </div>
+        </div>`).join('')
+      : '<div class="empty">No products yet.</div>';
+  }
+  const $ = (id) => document.getElementById(id);
+  loadProducts();
+</script>
+{% endblock %}
