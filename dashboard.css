@@ -435,3 +435,26 @@ a { color: var(--accent); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- Bulk machine update modal ---------- */
+.bulk-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.modal-wide { max-width: 720px; width: 92vw; }
+.bulk-controls {
+  display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;
+  padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-soft); margin-bottom: 0.75rem;
+}
+.bulk-controls .field { min-width: 160px; }
+.bulk-select-all { display: flex; align-items: center; }
+.bulk-machine-list {
+  max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;
+  padding-right: 4px;
+}
+.bulk-row {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-soft); border-radius: 10px; background: var(--panel2);
+  cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease;
+}
+.bulk-row:hover { background: var(--panel3); border-color: var(--accent); }
+.bulk-row .bulk-check { width: 16px; height: 16px; accent-color: var(--accent); }
+.bulk-row .bulk-name { font-weight: 600; flex: 1; }
+.bulk-row .bulk-group { color: var(--muted); font-size: 0.8rem; }

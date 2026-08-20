@@ -1,0 +1,15 @@
+{
+  "name": "workforce-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workforce & Machine Live Dashboard - Tailwind CSS build",
+  "scripts": {
+    "build": "tailwindcss -i ./static/input.css -o ./static/tailwind.css --minify",
+    "watch": "tailwindcss -i ./static/input.css -o ./static/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  }
+}

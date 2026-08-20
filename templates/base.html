@@ -3,167 +3,234 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Monitoring System{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <title>{% block title %}Workforce Dashboard{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    // Apply persisted theme before first paint to avoid a flash.
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.add('light');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body>
-  <div class="layout">
-    <!-- ===================== SIDEBAR ===================== -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-brand">
-        <div class="logo">W</div>
-        <div class="brand-text">
-          <span class="brand-name">Workforce</span>
-          <span class="brand-sub">Live Monitor</span>
-        </div>
+<body class="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased">
+
+  <!-- Mobile top bar -->
+  <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 bg-slate-800 border-b border-slate-700 px-4 py-3 shadow-sm">
+    <div class="flex items-center gap-2">
+      <button id="sidebarToggle" class="p-2 -ml-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <span class="font-bold text-brand-100">Workforce</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="themeToggle" class="p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </button>
+      <a href="{{ url_for('logout') }}" class="btn secondary !px-3 !py-1.5 text-xs">Logout</a>
+    </div>
+  </header>
+
+  <!-- Mobile global date + shift filter -->
+  <div class="lg:hidden flex items-center gap-2 px-4 py-2 bg-slate-800 border-b border-slate-700">
+    <input type="date" class="wf-date-input flex-1 min-w-0 bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+    <div class="inline-flex rounded-lg border border-slate-600 overflow-hidden">
+      <button type="button" data-shift="day" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
+      <button type="button" data-shift="night" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
+    </div>
+  </div>
+
+  <div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out bg-slate-800 border-r border-slate-700 flex flex-col">
+      <div class="flex items-center justify-between px-5 h-16 border-b border-slate-700">
+        <span class="text-lg font-bold text-brand-100">Workforce</span>
+        <button id="sidebarClose" class="lg:hidden p-2 -mr-2 rounded-lg text-slate-400 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Close menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
-      <nav class="nav">
-        {% if user_can('dashboard') %}
-        <a class="nav-item {% if active == 'dashboard' %}active{% endif %}" href="/">
-          <span class="nav-ico">▣</span> Dashboard
+      <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <a href="{{ url_for('dashboard') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Dashboard
         </a>
-        {% endif %}
-        {% if user_can('machines') %}
-        <a class="nav-item {% if active == 'machines' %}active{% endif %}" href="/machines">
-          <span class="nav-ico">⚙</span> Machines
+        <a href="{{ url_for('machines_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Machines
         </a>
-        {% endif %}
-        {% if user_can('products') %}
-        <a class="nav-item {% if active == 'products' %}active{% endif %}" href="/products">
-          <span class="nav-ico">▢</span> Products
+        <a href="{{ url_for('products_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Products
         </a>
-        {% endif %}
-        {% if user_can('groups') %}
-        <a class="nav-item {% if active == 'groups' %}active{% endif %}" href="/groups">
-          <span class="nav-ico">▤</span> Groups
+        <a href="{{ url_for('groups_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+          Groups
         </a>
-        {% endif %}
-        {% if user_can('reports') %}
-        <a class="nav-item {% if active == 'reports' %}active{% endif %}" href="/reports">
-          <span class="nav-ico">▥</span> Reports
+        <a href="{{ url_for('reports_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Reports
         </a>
-        {% endif %}
-        {% if user_can('entry') %}
-        <a class="nav-item {% if active == 'entry' %}active{% endif %}" href="/entry">
-          <span class="nav-ico">✎</span> Run Console
+        <a href="{{ url_for('entry') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+          Run Console
         </a>
-        {% endif %}
-        {% if user_can('workforce') %}
-        <a class="nav-item {% if active == 'workforce' %}active{% endif %}" href="/workforce">
-          <span class="nav-ico">👥</span> Workforce
+        <a href="{{ url_for('workforce_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+          Workforce
         </a>
-        {% endif %}
-        {% if user_can('runs') %}
-        <a class="nav-item {% if active == 'runs' %}active{% endif %}" href="/runs">
-          <span class="nav-ico">⏱</span> Production Runs
+        <a href="{{ url_for('runs_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Production Runs
         </a>
-        {% endif %}
-        {% if user_can('users') %}
-        <a class="nav-item {% if active == 'users' %}active{% endif %}" href="/users">
-          <span class="nav-ico">🔐</span> User Management
+        {% if user and user.role == 'admin' %}
+        <a href="{{ url_for('users_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          User Management
         </a>
         {% endif %}
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="user">
-          <div class="avatar">{{ (user.display_name or user.username)[0:1]|upper if user else 'U' }}</div>
-          <div class="user-meta">
-            <span class="user-name">{{ user.display_name or user.username if user else 'User' }}</span>
-            <span class="user-role">{{ user.role if user else '' }}</span>
-          </div>
+      <div class="border-t border-slate-700 p-4 flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-slate-100 truncate">{{ user.display_name if user and user.display_name else (user.username if user else 'Guest') }}</div>
+          <div class="text-xs text-slate-400 truncate">{{ user.role if user else '' }}</div>
         </div>
-        <a class="btn secondary logout-btn" href="/logout">Logout</a>
+        <button id="themeToggle2" class="hidden lg:inline-flex p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
       </div>
     </aside>
 
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Backdrop for mobile sidebar -->
+    <div id="sidebarBackdrop" class="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm hidden lg:hidden"></div>
 
-    <!-- ===================== MAIN ===================== -->
-    <div class="main">
-      <header class="topbar">
-        <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
-          <span></span><span></span><span></span>
-        </button>
-        <div class="topbar-title">
-          <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-          <p class="topbar-sub">
-            <span class="live"><span class="dot"></span> Live</span>
-            <span class="sep">•</span>
-            <span id="clock"></span>
-          </p>
+    <!-- Main content -->
+    <main class="flex-1 min-w-0 flex flex-col">
+      <div class="hidden lg:flex items-center justify-between gap-4 px-6 h-16 bg-slate-800 border-b border-slate-700 shadow-sm">
+        <h1 class="text-lg font-semibold text-slate-100">{% block page_title %}Dashboard{% endblock %}</h1>
+        <div class="flex items-center gap-3">
+          <!-- Global date + shift filter -->
+          <div class="flex items-center gap-2">
+            <input type="date" id="filterDateDesktop" class="wf-date-input bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <div class="inline-flex rounded-lg border border-slate-600 overflow-hidden">
+              <button type="button" data-shift="day" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
+              <button type="button" data-shift="night" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
+            </div>
+          </div>
+          <span id="clock" class="text-sm text-slate-400 tabular-nums"></span>
+          <button id="themeToggle3" class="p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </button>
+          <a href="{{ url_for('logout') }}" class="btn secondary text-sm">Logout</a>
         </div>
-        <div class="topbar-actions">
-          {% if user_can('entry') %}
-          <a class="btn" href="/entry">+ Update Data</a>
-          {% endif %}
-        </div>
-      </header>
+      </div>
 
-      <main class="content">
+      <div class="flex-1 p-4 sm:p-6 space-y-6">
         {% block content %}{% endblock %}
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
 
-  <div class="toast" id="toast">Saved</div>
+  <div id="toast" class="fixed bottom-4 right-4 z-50 hidden">
+    <div class="rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg bg-slate-700"></div>
+  </div>
 
   <script>
-    // Mobile drawer toggle
+    // Sidebar (mobile)
     const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburger = document.getElementById('hamburger');
-    function openDrawer() { sidebar.classList.add('open'); overlay.classList.add('show'); }
-    function closeDrawer() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
-    hamburger.addEventListener('click', () => {
-      sidebar.classList.contains('open') ? closeDrawer() : openDrawer();
-    });
-    overlay.addEventListener('click', closeDrawer);
-    // Close drawer when navigating on mobile
-    document.querySelectorAll('.nav-item').forEach(a =>
-      a.addEventListener('click', () => { if (window.matchMedia('(max-width: 768px)').matches) closeDrawer(); }));
+    const backdrop = document.getElementById('sidebarBackdrop');
+    function openSidebar() { sidebar.classList.remove('-translate-x-full'); backdrop.classList.remove('hidden'); }
+    function closeSidebar() { sidebar.classList.add('-translate-x-full'); backdrop.classList.add('hidden'); }
+    document.getElementById('sidebarToggle')?.addEventListener('click', openSidebar);
+    document.getElementById('sidebarClose')?.addEventListener('click', closeSidebar);
+    backdrop?.addEventListener('click', closeSidebar);
 
-    // Live clock
+    // Theme toggle — dark is the default (no class); light mode adds `.light`
+    function toggleTheme() {
+      const root = document.documentElement;
+      const isLight = root.classList.toggle('light');
+      try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch (e) {}
+    }
+    ['themeToggle', 'themeToggle2', 'themeToggle3'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', toggleTheme);
+    });
+
+    // Active nav link highlight
+    const path = location.pathname;
+    document.querySelectorAll('.nav-link').forEach(a => {
+      if (a.getAttribute('href') === path) {
+        a.classList.add('bg-slate-700', 'text-brand-100', 'font-semibold');
+      }
+    });
+
+    // Live clock (UAE time)
     function tick() {
       const el = document.getElementById('clock');
       if (!el) return;
-      const d = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      el.textContent = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      const now = new Date();
+      el.textContent = now.toLocaleString('en-GB', { timeZone: 'Asia/Dubai' });
     }
     tick(); setInterval(tick, 1000);
 
-    // Toast helper (global)
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      if (!t) return;
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 1800);
+    // ---- Global date + shift filter ----
+    // Pages call filterQuery() to scope their API requests and listen for
+    // 'wf:filter-changed' to re-fetch. Default (empty) shows all live data.
+    window.__wfFilter = { date: '', shift: '' };
+    function filterQuery() {
+      const p = new URLSearchParams();
+      if (window.__wfFilter.date) p.set('date', window.__wfFilter.date);
+      if (window.__wfFilter.shift) p.set('shift', window.__wfFilter.shift);
+      return p.toString();
+    }
+    function applyWfFilter(date, shift) {
+      window.__wfFilter.date = date || '';
+      window.__wfFilter.shift = shift || '';
+      document.querySelectorAll('.wf-date-input').forEach(el => { el.value = window.__wfFilter.date; });
+      document.querySelectorAll('.wf-shift-btn').forEach(b => {
+        const active = b.dataset.shift === window.__wfFilter.shift;
+        b.classList.toggle('bg-brand-500', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('bg-slate-700', !active);
+        b.classList.toggle('text-slate-300', !active);
+      });
+      window.dispatchEvent(new CustomEvent('wf:filter-changed'));
+    }
+    document.querySelectorAll('.wf-date-input').forEach(el => {
+      el.addEventListener('change', () => applyWfFilter(el.value, window.__wfFilter.shift));
+    });
+    document.querySelectorAll('.wf-shift-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const shift = (b.dataset.shift === window.__wfFilter.shift) ? '' : b.dataset.shift;
+        applyWfFilter(window.__wfFilter.date, shift);
+      });
+    });
+
+    // ---- Shared UI helpers (used by every page) ----
+    // Lightweight toast notification.
+    let __toastTimer = null;
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      const box = toast.firstElementChild;
+      box.textContent = message || '';
+      box.className = 'rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ' +
+        (type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-700');
+      toast.classList.remove('hidden');
+      if (__toastTimer) clearTimeout(__toastTimer);
+      __toastTimer = setTimeout(() => toast.classList.add('hidden'), 3200);
     }
 
-    // ---- Cross-tab machine-status sync ----
-    // When a machine status changes (single update, bulk start/stop, run
-    // start/stop), we bump a revision counter in localStorage. The `storage`
-    // event fires in EVERY OTHER open tab, which then reloads its data so the
-    // change is reflected live everywhere (dashboard, machines, run console,
-    // production runs) without a server push.
-    const WF_MACHINE_REV_KEY = 'wf_machine_rev';
+    // Broadcast that machine data changed so other open pages refresh.
     function broadcastMachineChange() {
-      try {
-        const cur = parseInt(localStorage.getItem(WF_MACHINE_REV_KEY) || '0', 10) || 0;
-        localStorage.setItem(WF_MACHINE_REV_KEY, String(cur + 1));
-      } catch (e) { /* storage may be unavailable; ignore */ }
+      window.dispatchEvent(new CustomEvent('wf:machines-changed'));
     }
-    window.addEventListener('storage', (e) => {
-      if (e.key === WF_MACHINE_REV_KEY && e.newValue !== e.oldValue) {
-        window.dispatchEvent(new CustomEvent('wf:machines-changed'));
-      }
-    });
   </script>
   {% block scripts %}{% endblock %}
 </body>

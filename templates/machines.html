@@ -15,10 +15,12 @@
       </select>
       <input type="search" id="searchBox" placeholder="Search machine…" />
     </div>
+    {% if user and user.role in ('admin', 'supervisor') %}
     <div class="bulk-actions">
       <button class="btn small" id="bulkStartBtn">▶ Start All Machines</button>
       <button class="btn small secondary" id="bulkStopBtn">■ Stop All Machines</button>
     </div>
+    {% endif %}
     <div class="summary-pills" id="summaryPills"></div>
   </div>
 
@@ -38,9 +40,8 @@
             <option value="running">Running</option>
             <option value="out_of_order">Break Down</option>
             <option value="maintenance">Maintenance</option>
-        <option value="idle">Idle</option>
-        <option value="running">Running</option>
-      </select>
+            <option value="idle">Idle</option>
+          </select>
         </div>
         <div class="field">
           <label>Note</label>
@@ -82,6 +83,71 @@
       </div>
     </div>
   </div>
+
+  <!-- Shift-hours edit modal -->
+  <div class="modal-overlay" id="shModalOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="shModalTitle">Edit Shift Hours</h3>
+        <button class="modal-close" id="shModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-meta" id="shModalMeta"></p>
+        <div class="field">
+          <label>Day Shift Planned Hours</label>
+          <input id="shDayHours" type="number" min="0" max="24" step="1" />
+        </div>
+        <div class="field">
+          <label>Night Shift Planned Hours</label>
+          <input id="shNightHours" type="number" min="0" max="24" step="1" />
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary" id="shModalCancel">Cancel</button>
+        <button class="btn" id="shModalSave">Save Hours</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk status update modal (admin / supervisor) -->
+  <div class="modal-overlay" id="bulkModalOverlay">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h3 id="bulkModalTitle">Update Machines</h3>
+        <button class="modal-close" id="bulkModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="bulk-controls">
+          <div class="field">
+            <label>Set Status</label>
+            <select id="bulkStatus">
+              <option value="running">Running</option>
+              <option value="idle">Idle</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="out_of_order">Break Down</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Shift</label>
+            <select id="bulkShift">
+              <option value="">Keep current</option>
+              <option value="day">Day Shift</option>
+              <option value="night">Night Shift</option>
+            </select>
+          </div>
+          <div class="field bulk-select-all">
+            <label><input type="checkbox" id="bulkSelectAll" /> Select / deselect all</label>
+          </div>
+        </div>
+        <p class="modal-meta">Tick the machines you want to update, then submit to change them all at once. Production runs are updated automatically.</p>
+        <div class="bulk-machine-list" id="bulkMachineList"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary" id="bulkModalCancel">Cancel</button>
+        <button class="btn" id="bulkModalSubmit">Submit Updates</button>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block scripts %}
@@ -91,7 +157,6 @@
     out_of_order: { label: 'Break Down', color: '#f87171' },
     maintenance:  { label: 'Maintenance',  color: '#fbbf24' },
     idle:         { label: 'Idle',         color: '#94a3b8' },
-    running:      { label: 'Running',      color: '#38bdf8' },
   };
 
   let machines = [];
@@ -108,8 +173,8 @@
 
   async function loadMachines() {
     const [mRes, rRes] = await Promise.all([
-      fetch('/api/machines'),
-      fetch('/api/runs?status=running'),
+      fetch('/api/machines?' + filterQuery()),
+      fetch('/api/runs?status=running&' + filterQuery()),
     ]);
     const mData = await mRes.json();
     const rData = await rRes.json();
@@ -127,7 +192,7 @@
     );
 
     // Summary pills
-    const counts = { running: 0, out_of_order: 0, maintenance: 0, idle: 0, running: 0 };
+    const counts = { running: 0, out_of_order: 0, maintenance: 0, idle: 0 };
     machines.forEach(m => counts[m.status] = (counts[m.status] || 0) + 1);
     $('summaryPills').innerHTML = Object.entries(counts).map(([s, c]) =>
       `<span class="pill ${s}"><span class="pill-dot" style="background:${STATUS_META[s].color}"></span>${STATUS_META[s].label}: <b>${c}</b></span>`
@@ -147,19 +212,24 @@
             <span>Group: <b>${m.group_name || '—'}</b></span>
             <span>Product: <b>${m.product_name || '—'}</b></span>
           </div>
+          <div class="mc-shift-hours">
+            <span class="sh-chip" title="Planned day-shift hours">☀ Day <b>${m.day_hours ?? 11}h</b></span>
+            <span class="sh-chip" title="Planned night-shift hours">🌙 Night <b>${m.night_hours ?? 11}h</b></span>
+          </div>
           <div class="mc-foot">
             <span class="mc-updated">${m.updated_by || '—'} · ${fmtTime(m.updated_at)}</span>
-            <div style="display:flex; gap:0.4rem;">
+            <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
               ${runningIds.has(m.id)
                 ? `<button class="btn small run-stop" data-id="${m.id}">■ Stop</button>`
                 : `<button class="btn small run-start" data-id="${m.id}">▶ Start</button>`}
               <button class="btn small" data-id="${m.id}">Update</button>
+              <button class="btn small sh-edit" data-id="${m.id}">Edit Hours</button>
             </div>
           </div>
         </div>`).join('')
       : '<div class="empty">No machines match.</div>';
 
-    document.querySelectorAll('.machine-card .btn.small').forEach(btn =>
+    document.querySelectorAll('.machine-card .btn.small:not(.run-start):not(.run-stop):not(.sh-edit)').forEach(btn =>
       btn.addEventListener('click', () => openModal(parseInt(btn.dataset.id, 10))));
     document.querySelectorAll('.machine-card .run-start').forEach(btn =>
       btn.addEventListener('click', (e) => { e.stopPropagation(); openRunModal(parseInt(btn.dataset.id, 10)); }));
@@ -243,25 +313,127 @@
   $('runModalStart').addEventListener('click', startRunFromModal);
   $('runModalOverlay').addEventListener('click', (e) => { if (e.target === $('runModalOverlay')) closeRunModal(); });
 
+  // ---- Shift-hours edit modal ----
+  let shId = null;
+  function openShModal(id) {
+    const m = machines.find(x => x.id === id);
+    if (!m) return;
+    shId = id;
+    $('shModalTitle').textContent = 'Edit Shift Hours · ' + m.name;
+    $('shModalMeta').textContent = `Group: ${m.group_name || '—'} · Product: ${m.product_name || '—'}`;
+    $('shDayHours').value = (m.day_hours ?? 11);
+    $('shNightHours').value = (m.night_hours ?? 11);
+    $('shModalOverlay').classList.add('show');
+  }
+  function closeShModal() { $('shModalOverlay').classList.remove('show'); shId = null; }
+  async function saveShHours() {
+    if (shId == null) return;
+    const payload = {
+      day_hours: parseInt($('shDayHours').value, 10) || 0,
+      night_hours: parseInt($('shNightHours').value, 10) || 0,
+    };
+    const res = await fetch('/api/machine/' + shId + '/shift-hours', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      showToast('Shift hours saved');
+      closeShModal();
+      loadMachines();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || 'Failed to save');
+    }
+  }
+  $('shModalClose').addEventListener('click', closeShModal);
+  $('shModalCancel').addEventListener('click', closeShModal);
+  $('shModalSave').addEventListener('click', saveShHours);
+  $('shModalOverlay').addEventListener('click', (e) => { if (e.target === $('shModalOverlay')) closeShModal(); });
+  // Delegate the "Edit Hours" buttons rendered inside cards.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sh-edit');
+    if (btn) { e.stopPropagation(); openShModal(parseInt(btn.dataset.id, 10)); }
+  });
+
   // ---- Bulk start / stop all machines ----
-  async function bulkStart() {
-    const res = await fetch('/api/machines/bulk-start', { method: 'POST' });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) { showToast(`Started ${data.updated || 0} machine(s)`); broadcastMachineChange(); loadMachines(); }
-    else showToast('Bulk start failed');
+  // Both "Start All" and "Stop All" open the SAME bulk-update form: pick the
+  // status, shift and the machines (via checkboxes), then submit to update
+  // them all at once. Production runs are updated automatically on submit.
+  function openBulkModal(mode) {
+    renderBulkList();
+    $('bulkSelectAll').checked = false;
+    if (mode === 'stop') {
+      $('bulkModalTitle').textContent = 'Stop Machines';
+      $('bulkStatus').value = 'idle';
+      // Pre-select currently running machines for convenience.
+      document.querySelectorAll('.bulk-check').forEach(c => {
+        const m = machines.find(x => x.id === parseInt(c.value, 10));
+        c.checked = !!(m && m.status === 'running');
+      });
+    } else {
+      $('bulkModalTitle').textContent = 'Update Machines';
+    }
+    $('bulkModalOverlay').classList.add('show');
   }
-  async function bulkStop() {
-    const res = await fetch('/api/machines/bulk-stop', { method: 'POST' });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) { showToast(`Stopped ${data.updated || 0} machine(s)`); broadcastMachineChange(); loadMachines(); }
-    else showToast('Bulk stop failed');
+  function closeBulkModal() { $('bulkModalOverlay').classList.remove('show'); }
+
+  function renderBulkList() {
+    const q = ($('searchBox') ? $('searchBox').value : '').trim().toLowerCase();
+    const list = machines.filter(m =>
+      !q || m.name.toLowerCase().includes(q) || (m.code || '').toLowerCase().includes(q)
+    );
+    $('bulkMachineList').innerHTML = list.map(m => `
+      <label class="bulk-row">
+        <input type="checkbox" class="bulk-check" value="${m.id}" />
+        <span class="bulk-name">${m.name}</span>
+        <span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span>
+        <span class="bulk-group">${m.group_name || '—'}</span>
+      </label>`).join('');
   }
-  $('bulkStartBtn').addEventListener('click', bulkStart);
-  $('bulkStopBtn').addEventListener('click', bulkStop);
+
+  async function submitBulkUpdate() {
+    const checked = Array.from(document.querySelectorAll('.bulk-check:checked')).map(c => parseInt(c.value, 10));
+    if (!checked.length) { showToast('Select at least one machine'); return; }
+    const payload = {
+      status: $('bulkStatus').value,
+      shift: $('bulkShift').value || null,
+      machine_ids: checked,
+      update_runs: true,
+    };
+    const res = await fetch('/api/machines/bulk_update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast(`Updated ${data.updated || 0} machine(s)`);
+      closeBulkModal();
+      broadcastMachineChange();
+      loadMachines();
+    } else {
+      showToast(data.error || 'Bulk update failed');
+    }
+  }
+
+  $('bulkStartBtn').addEventListener('click', () => openBulkModal('start'));
+  $('bulkStopBtn').addEventListener('click', () => openBulkModal('stop'));
+  $('bulkModalClose').addEventListener('click', closeBulkModal);
+  $('bulkModalCancel').addEventListener('click', closeBulkModal);
+  $('bulkModalSubmit').addEventListener('click', submitBulkUpdate);
+  $('bulkModalOverlay').addEventListener('click', (e) => { if (e.target === $('bulkModalOverlay')) closeBulkModal(); });
+  $('bulkSelectAll').addEventListener('change', (e) => {
+    document.querySelectorAll('.bulk-check').forEach(c => { c.checked = e.target.checked; });
+  });
+  $('searchBox').addEventListener('input', () => { if ($('bulkModalOverlay').classList.contains('show')) renderBulkList(); });
 
   loadMachines();
 
   // Live cross-tab sync: reload when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => loadMachines());
+
+  // Global date + shift filter: re-fetch machines + running runs on change.
+  window.addEventListener('wf:filter-changed', () => loadMachines());
 </script>
 {% endblock %}

@@ -8,6 +8,14 @@
     <div class="filters">
       <label class="inline">From <input type="date" id="fromDate" /></label>
       <label class="inline">To <input type="date" id="toDate" /></label>
+      <select id="machineFilter">
+        <option value="">All machines</option>
+      </select>
+      <select id="shiftFilter">
+        <option value="">All shifts</option>
+        <option value="day">Day</option>
+        <option value="night">Night</option>
+      </select>
       <select id="statusFilter">
         <option value="">All transitions</option>
         <option value="running">Running</option>
@@ -27,7 +35,7 @@
   <div class="table-wrap">
     <table id="reportTable">
       <thead>
-        <tr><th>Time</th><th>Machine</th><th>From</th><th>To</th><th>By</th><th>Note</th></tr>
+        <tr><th>Time</th><th>Machine</th><th>From</th><th>To</th><th>Shift</th><th>By</th><th>Note</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -50,12 +58,18 @@
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function params() {
-    const f = $('fromDate').value, t = $('toDate').value;
-    const s = $('statusFilter').value, q = $('searchBox').value.trim();
     const p = new URLSearchParams();
-    if (f) p.set('date_from', f);
-    if (t) p.set('date_to', t);
+    const from = $('fromDate').value;
+    const to = $('toDate').value;
+    if (from) p.set('date_from', from);
+    if (to) p.set('date_to', to);
+    const mid = $('machineFilter').value;
+    if (mid) p.set('machine_id', mid);
+    const sh = $('shiftFilter').value;
+    if (sh) p.set('shift', sh);
+    const s = $('statusFilter').value;
     if (s) p.set('status', s);
+    const q = $('searchBox').value.trim();
     if (q) p.set('search', q);
     return p.toString();
   }
@@ -85,18 +99,39 @@
           <td class="strong">${l.machine_name || '—'}${l.machine_code ? ' · ' + l.machine_code : ''}</td>
           <td><span class="badge ${l.from_status || ''}">${STATUS_META[l.from_status]?.label || l.from_status || '—'}</span></td>
           <td><span class="badge ${l.to_status}">${STATUS_META[l.to_status]?.label || l.to_status}</span></td>
+          <td>${l.shift ? (l.shift.charAt(0).toUpperCase() + l.shift.slice(1)) : '—'}</td>
           <td>${l.updated_by || '—'}</td>
           <td>${l.note || '—'}</td>
         </tr>`).join('')
-      : '<tr><td colspan="6" class="empty">No records in range.</td></tr>';
+      : '<tr><td colspan="7" class="empty">No records in range.</td></tr>';
   }
   const $ = (id) => document.getElementById(id);
+
+  // Populate the machine dropdown from the API.
+  async function loadMachines() {
+    try {
+      const res = await fetch('/api/machines');
+      const data = await res.json();
+      const sel = $('machineFilter');
+      (data.machines || []).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name + (m.code ? ' · ' + m.code : '');
+        sel.appendChild(opt);
+      });
+    } catch (e) { /* non-fatal */ }
+  }
+
   $('applyBtn').addEventListener('click', loadReports);
   $('statusFilter').addEventListener('change', loadReports);
+  $('shiftFilter').addEventListener('change', loadReports);
+  $('machineFilter').addEventListener('change', loadReports);
   $('searchBox').addEventListener('input', loadReports);
   $('exportBtn').addEventListener('click', () => {
     window.location.href = '/api/reports/export?' + params();
   });
+
+  loadMachines();
   loadReports();
 </script>
 {% endblock %}

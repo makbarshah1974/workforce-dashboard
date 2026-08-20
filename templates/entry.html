@@ -35,13 +35,13 @@
 
       <div class="field">
         <label for="itemName">Item Name</label>
-        <input id="itemName" list="itemNameList" placeholder="e.g. Bearing Assy" autocomplete="off" />
+        <input id="itemName" list="itemNameList" placeholder="e.g. Assembly item" autocomplete="off" />
         <datalist id="itemNameList"></datalist>
       </div>
 
       <div class="field">
         <label for="itemCode">Item Code</label>
-        <input id="itemCode" list="itemCodeList" placeholder="e.g. BRG-001" autocomplete="off" />
+        <input id="itemCode" list="itemCodeList" placeholder="e.g. ABG050" autocomplete="off" />
         <datalist id="itemCodeList"></datalist>
       </div>
 
@@ -109,10 +109,10 @@
 
   async function loadAll() {
     const [m, g, p, r] = await Promise.all([
-      fetch('/api/machines').then(x => x.json()),
+      fetch('/api/machines?' + filterQuery()).then(x => x.json()),
       fetch('/api/groups').then(x => x.json()),
       fetch('/api/products').then(x => x.json()),
-      fetch('/api/runs').then(x => x.json()),
+      fetch('/api/runs?' + filterQuery()).then(x => x.json()),
     ]);
     machines = m.machines; groups = g.groups; products = p.products; runs = r.runs;
     populateSelects();
@@ -260,5 +260,8 @@
 
   // Live cross-tab sync: refresh when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
+
+  // Global date + shift filter: re-fetch runs + machines on change.
+  window.addEventListener('wf:filter-changed', () => loadAll());
 </script>
 {% endblock %}

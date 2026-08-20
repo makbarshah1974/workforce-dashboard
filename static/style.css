@@ -5,7 +5,7 @@
   --bg: #0b1220;
   --bg-2: #243052;
   --surface: #131d36;
-  --surface-2: #18233f;
+  --surface-2: #25355f;
   --surface-3: #1f2c4d;
   --border: #243352;
   --text: #e8eefc;
@@ -23,6 +23,47 @@
   --sidebar-w: 260px;
   --ease: all 0.3s ease;
 }
+
+/* ============================================================
+   LIGHT THEME — applied when <html> has the .light class
+   (toggled by the theme button; dark is the default)
+   ============================================================ */
+html.light {
+  --bg: #fdf3f5;
+  --bg-2: #f8e6ea;
+  --surface: #fffafb;
+  --surface-2: #fdeef1;
+  --surface-3: #f9e2e7;
+  --border: #f3d9df;
+  --text: #4a2730;
+  --muted: #9a6b76;
+  --accent: #c2415c;
+  --accent-2: #be185d;
+  --green: #0f9d6b;
+  --red: #d6336c;
+  --amber: #c97a0b;
+  --slate: #9a6b76;
+  --shadow: 0 10px 30px rgba(190, 100, 120, 0.14);
+  --shadow-sm: 0 4px 14px rgba(190, 100, 120, 0.10);
+}
+
+/* Light-mode overrides for the Tailwind utility classes used in the chrome */
+html.light body {
+  background: radial-gradient(1200px 600px at 80% -10%, #fbe3e8 0%, var(--bg) 55%) fixed;
+  color: var(--text);
+}
+html.light .bg-slate-900 { background-color: var(--bg); }
+html.light .text-slate-100 { color: var(--text); }
+html.light .text-slate-300 { color: #7a4a55; }
+html.light .text-slate-400 { color: var(--muted); }
+html.light .bg-slate-800 { background-color: #fffafb; }
+html.light .bg-slate-700 { background-color: #f9e2e7; }
+html.light .bg-slate-600 { background-color: #f3d9df; }
+html.light .border-slate-700 { border-color: #f3d9df; }
+html.light .border-slate-600 { border-color: #f3d9df; }
+html.light .hover\:bg-slate-700:hover { background-color: #f9e2e7; }
+html.light .hover\:bg-slate-600:hover { background-color: #f3d9df; }
+html.light .text-brand-100 { color: #c2415c; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -184,7 +225,7 @@ textarea { resize: vertical; }
   padding: 1.1rem 1.2rem; box-shadow: var(--shadow-sm);
   transition: var(--ease); position: relative; overflow: hidden;
 }
-.card:hover { transform: translateY(-2px); border-color: rgba(79,140,255,0.4); }
+.card:hover { transform: translateY(-2px); border-color: rgba(79,140,255,0.4); filter: brightness(1.08); }
 .card .label { color: var(--muted); font-size: 0.82rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
 .card .value { font-size: 1.9rem; font-weight: 800; margin-top: 0.3rem; }
 .card.c1 { border-left: 4px solid var(--green); }
@@ -235,7 +276,9 @@ textarea { resize: vertical; }
   background: linear-gradient(180deg, var(--surface), var(--surface-2));
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1.2rem; box-shadow: var(--shadow-sm);
+  transition: var(--ease);
 }
+.panel:hover { filter: brightness(1.08); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .panel-head h2 { font-size: 1.05rem; }
 
@@ -309,7 +352,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .badge.out_of_order { background: rgba(248,113,113,0.16); color: var(--red); }
 .badge.maintenance { background: rgba(251,191,36,0.16); color: var(--amber); }
 .badge.idle { background: rgba(148,163,184,0.16); color: var(--slate); }
-.badge.running { background: rgba(56,189,248,0.16); color: #38bdf8; }
 
 /* ============================================================
    TOOLBAR / FILTERS / PILLS
@@ -335,12 +377,11 @@ tbody tr:last-child td { border-bottom: 0; }
   padding: 1.1rem; box-shadow: var(--shadow-sm); transition: var(--ease);
   border-left: 4px solid var(--slate);
 }
-.machine-card:hover { transform: translateY(-2px); }
+.machine-card:hover { transform: translateY(-2px); filter: brightness(1.08); }
 .machine-card.status-running { border-left-color: var(--green); }
 .machine-card.status-out_of_order { border-left-color: var(--red); }
 .machine-card.status-maintenance { border-left-color: var(--amber); }
 .machine-card.status-idle { border-left-color: var(--slate); }
-.machine-card.status-running { border-left-color: #38bdf8; }
 .mc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .mc-name { font-weight: 700; font-size: 1rem; }
 .mc-code { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
@@ -348,6 +389,28 @@ tbody tr:last-child td { border-bottom: 0; }
 .mc-meta b { color: var(--text); }
 .mc-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.7rem; }
 .mc-updated { font-size: 0.74rem; color: var(--muted); }
+.mc-shift-hours { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.6rem 0 0.2rem; }
+.sh-chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.74rem; padding: 0.25rem 0.55rem; border-radius: 999px;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--muted);
+}
+.sh-chip b { color: var(--text); font-weight: 700; }
+.sh-edit { padding: 0.25rem 0.6rem; font-size: 0.74rem; }
+
+/* ---- Historical (date/shift) banner ---- */
+.historical-banner {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.7rem 1rem; border-radius: var(--radius-sm);
+  background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.4);
+  color: #fde68a; font-size: 0.88rem; font-weight: 600;
+}
+.historical-banner .hb-ico { font-size: 1.1rem; }
+.historical-banner .hb-clear {
+  margin-left: auto; background: none; border: 1px solid rgba(251,191,36,0.5);
+  color: #fde68a; border-radius: 999px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.78rem;
+}
+.historical-banner .hb-clear:hover { background: rgba(251,191,36,0.2); }
 
 /* ============================================================
    MODAL
@@ -375,9 +438,14 @@ tbody tr:last-child td { border-bottom: 0; }
    ============================================================ */
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
 .auth-card {
-  width: 100%; max-width: 400px; background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  width: 100%; max-width: 480px;
+  max-height: calc(100vh - 2rem); overflow-y: auto;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
   border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow);
 }
+/* Keep the scrollbar subtle inside the card on small screens */
+.auth-card::-webkit-scrollbar { width: 8px; }
+.auth-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 .auth-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
 .auth-brand h1 { font-size: 1.3rem; }
 .auth-card .sub { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.9rem; }
@@ -385,10 +453,11 @@ tbody tr:last-child td { border-bottom: 0; }
 .hint { color: var(--muted); font-size: 0.78rem; margin-top: 1rem; text-align: center; }
 
 /* ---------- Role selection (step 1 of login) ---------- */
-.role-grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 0.5rem; }
+.role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
 .role-card {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;
-  text-align: left; cursor: pointer; padding: 0.9rem 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  text-align: center; cursor: pointer; padding: 0.9rem 1rem;
+  min-width: 0; overflow: hidden;
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text);
   transition: var(--ease); font: inherit;
@@ -396,10 +465,11 @@ tbody tr:last-child td { border-bottom: 0; }
 .role-card:hover, .role-card:focus-visible {
   border-color: var(--accent); background: var(--surface-3);
   transform: translateY(-2px); box-shadow: var(--shadow-sm); outline: none;
+  filter: brightness(1.06);
 }
-.role-ico { font-size: 1.4rem; line-height: 1; }
-.role-name { font-weight: 700; font-size: 0.98rem; }
-.role-desc { font-size: 0.76rem; color: var(--muted); }
+.role-ico { font-size: 1.4rem; line-height: 1; flex: none; }
+.role-name { font-weight: 700; font-size: 0.98rem; overflow-wrap: anywhere; }
+.role-desc { font-size: 0.76rem; color: var(--muted); overflow-wrap: break-word; }
 
 /* ---------- Credentials step (step 2 of login) ---------- */
 .role-pill {
@@ -432,6 +502,7 @@ tbody tr:last-child td { border-bottom: 0; }
    ============================================================ */
 .console-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
 .console-grid .field { margin-bottom: 0; }
+.console-grid .field-wide { grid-column: 1 / -1; }
 .console-actions { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
 
 .run-timer { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.5rem; color: var(--green); }
@@ -448,6 +519,7 @@ tbody tr:last-child td { border-bottom: 0; }
   border-left: 4px solid var(--slate);
 }
 .run-card.running { border-left-color: var(--green); }
+.run-card:hover { transform: translateY(-2px); filter: brightness(1.08); }
 .run-card .rc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .run-card .rc-name { font-weight: 700; font-size: 1rem; }
 .run-card .rc-meta { display: flex; flex-direction: column; gap: 0.25rem; margin: 0.7rem 0; font-size: 0.82rem; color: var(--muted); }
@@ -556,6 +628,29 @@ tbody tr:last-child td { border-bottom: 0; }
 
 /* Permission modal reuses .modal / .modal-overlay */
 #permModal { display: none; }
+
+/* ============================================================
+   BULK MACHINE UPDATE MODAL
+   ============================================================ */
+.modal-wide { max-width: 620px; }
+.bulk-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+.bulk-controls .field { min-width: 160px; }
+.bulk-select-all { display: flex; align-items: center; }
+.bulk-select-all label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); }
+.bulk-machine-list {
+  margin-top: 1rem; max-height: 320px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  display: flex; flex-direction: column;
+}
+.bulk-row {
+  display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.88rem;
+}
+.bulk-row:last-child { border-bottom: 0; }
+.bulk-row:hover { background: var(--surface-3); }
+.bulk-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+.bulk-name { font-weight: 600; flex: 1; }
+.bulk-group { color: var(--muted); font-size: 0.8rem; }
 #permModal[style*="flex"] { display: flex; }
 
 /* ============================================================
@@ -635,4 +730,9 @@ tbody tr:last-child td { border-bottom: 0; }
   .card .value { font-size: 1.6rem; }
   .donut { width: 120px; height: 120px; }
   .donut-hole { width: 84px; height: 84px; }
+
+  /* Auth card: tighter padding and a single-column role grid so the
+     role buttons always fit comfortably inside the frame. */
+  .auth-card { padding: 1.25rem; }
+  .role-grid { grid-template-columns: 1fr; }
 }

@@ -1,0 +1,17 @@
+# AGENTS.md / `.clinerules` - Project Instructions for Hy3 AI
+
+## 1. Role & Execution Protocol
+- You are an expert Senior Frontend Engineer utilizing the **Hy3** architecture.
+- Focus on clean code generation, direct terminal execution, and robust modular frontend design.
+- Always inspect existing project files and configurations before creating or modifying code.
+
+## 2. Tailwind CSS & UI Standards
+- **Utility-First Styling:** Use standard Tailwind CSS utility classes exclusively. Avoid writing inline styles or arbitrary raw CSS files.
+- **Mobile-First Responsiveness:** Build layouts using standard Tailwind breakpoints (`sm:`, `md:`, `lg:`, `xl:`).
+- **Dynamic Classes:** Do not dynamically construct class strings (e.g., `bg-${color}-500`). Use full explicit utility names or combine them with utility helpers like `clsx` / `cn()` (Tailwind Merge).
+- **UI Consistency:** Ensure consistent padding, smooth focus/hover transitions (`transition-all duration-200 ease-in-out`), and accessible text contrast (`text-slate-900 dark:text-slate-100`) across all modified components.
+
+## 3. Workflow & Safety Rules
+1. **Targeted Modifications:** Edit only the specific files required for the assigned feature.
+2. **Import Verification:** Verify all component imports, exports, and relative paths before finalizing modifications.
+3. **Automated Build Checks:** After making changes, run `npm run build` or `npx tsc --noEmit` in the VS Code integrated terminal to confirm there are no syntax or type errors.

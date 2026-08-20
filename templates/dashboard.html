@@ -31,27 +31,10 @@
     </section>
   </div>
 
-  <!-- Live production runs -->
-  <div class="section-title">Live Production Runs</div>
-  <div class="run-grid" id="activeRuns"></div>
+  <!-- Product breakdown -->
+  <div class="section-title">By Product</div>
+  <div class="grid grid-3" id="productGrid"></div>
 
-  <!-- Group breakdown -->
-  <div class="section-title">By Group</div>
-  <div class="grid grid-3" id="groupGrid"></div>
-
-  <!-- Live machine table -->
-  <div class="section-title">Machines — Live Status</div>
-  <div class="table-wrap">
-    <table id="machineTable">
-      <thead>
-        <tr>
-          <th>Machine</th><th>Code</th><th>Group</th><th>Product</th>
-          <th>Status</th><th>Location</th><th>Updated By</th><th>Updated</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
 {% endblock %}
 
 {% block scripts %}
@@ -81,7 +64,7 @@
   }
 
   async function loadSummary() {
-    const res = await fetch('/api/summary');
+    const res = await fetch('/api/summary?' + filterQuery());
     const data = await res.json();
 
     // KPIs (skip rebuild while a dropdown is open so the refresh doesn't close it)
@@ -160,10 +143,10 @@
         </li>`).join('')
       : '<li class="empty">No activity yet.</li>';
 
-    // Groups
-    const groups = Object.entries(data.by_group);
-    $('groupGrid').innerHTML = groups.length
-      ? groups.map(([name, st]) => `
+    // Products (replaces the old "By Group" breakdown)
+    const products = Object.entries(data.by_product);
+    $('productGrid').innerHTML = products.length
+      ? products.map(([name, st]) => `
         <div class="card c5">
           <div class="label">${name}</div>
           <div class="group-stats">
@@ -173,7 +156,7 @@
             <span class="gs idle">${st.idle} idle</span>
           </div>
         </div>`).join('')
-      : '<div class="empty">No groups.</div>';
+      : '<div class="empty">No products.</div>';
   }
 
   // ---- KPI card dropdown: click a card to reveal its corresponding list ----
@@ -268,51 +251,6 @@
     });
   }
 
-  async function loadMachines() {
-    const res = await fetch('/api/machines');
-    const data = await res.json();
-    const tbody = $('machineTable').querySelector('tbody');
-    tbody.innerHTML = data.machines.map(m => `
-      <tr>
-        <td class="strong">${m.name}</td>
-        <td>${m.code || '—'}</td>
-        <td>${m.group_name || '—'}</td>
-        <td>${m.product_name || '—'}</td>
-        <td><span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span></td>
-        <td>${m.location || '—'}</td>
-        <td>${m.updated_by || '—'}</td>
-        <td>${fmtTime(m.updated_at)}</td>
-      </tr>`).join('');
-  }
-
-  async function loadRuns() {
-    const res = await fetch('/api/runs');
-    const data = await res.json();
-    const active = data.runs.filter(r => r.status === 'running');
-    $('activeRuns').innerHTML = active.length
-      ? active.map(r => `
-        <div class="run-card running">
-          <div class="rc-top">
-            <div>
-              <div class="rc-name">${r.machine_name || 'Machine'}</div>
-              <div class="mc-code">${r.item_name || '—'} ${r.item_code ? '· ' + r.item_code : ''}</div>
-            </div>
-            <span class="badge running">Running</span>
-          </div>
-          <div class="rc-meta">
-            <span>Group: <b>${r.group_name || '—'}</b></span>
-            <span>Product: <b>${r.product_name || '—'}</b></span>
-            <span>Operator: <b>${r.operator || '—'}</b></span>
-          </div>
-          <div class="rc-foot">
-            <span class="run-timer" data-start="${r.started_at}">00:00:00</span>
-            {% if user_can('entry') %}<a class="btn small" href="/entry">Manage</a>{% endif %}
-          </div>
-        </div>`).join('')
-      : '<div class="empty">No active runs. {% if user_can("entry") %}<a href="/entry">Start one →</a>{% else %}Contact an operator.{% endif %}</div>';
-    tickTimers();
-  }
-
   function tickTimers() {
     document.querySelectorAll('.run-timer[data-start]').forEach(el => {
       const start = new Date(el.dataset.start).getTime();
@@ -323,12 +261,13 @@
   const $ = (id) => document.getElementById(id);
   initKpiCards();
   loadSummary();
-  loadMachines();
-  loadRuns();
-  setInterval(() => { loadSummary(); loadMachines(); loadRuns(); }, 8000);
+  setInterval(loadSummary, 8000);
   setInterval(tickTimers, 1000);
 
   // Live cross-tab sync: refresh when another tab changes machine status.
-  window.addEventListener('wf:machines-changed', () => { loadSummary(); loadMachines(); loadRuns(); });
+  window.addEventListener('wf:machines-changed', loadSummary);
+
+  // Global date + shift filter: re-fetch everything when the selection changes.
+  window.addEventListener('wf:filter-changed', loadSummary);
 </script>
 {% endblock %}

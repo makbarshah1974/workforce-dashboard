@@ -7,9 +7,11 @@
   <div class="toolbar">
     <div class="filters">
       <select id="statusFilter">
-        <option value="">All runs</option>
+        <option value="">All M/C Status</option>
         <option value="running">Running</option>
-        <option value="stopped">Stopped</option>
+        <option value="out_of_order">Break Down</option>
+        <option value="maintenance">Maintenance</option>
+        <option value="idle">Idle</option>
       </select>
       <select id="machineFilter"><option value="">All machines</option></select>
       <a class="btn secondary" href="/api/runs/export">⬇ Export CSV</a>
@@ -54,7 +56,7 @@
 
   // Build the machine filter dropdown ONCE (so the auto-refresh never resets it)
   async function loadMachines() {
-    const m = await fetch('/api/machines').then(x => x.json());
+    const m = await fetch('/api/machines?' + filterQuery()).then(x => x.json());
     machines = m.machines;
     $('machineFilter').innerHTML = '<option value="">All machines</option>' +
       machines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
@@ -62,7 +64,7 @@
 
   // Refresh only the run data on the interval (preserves the user's filter selection)
   async function loadRuns() {
-    const r = await fetch('/api/runs').then(x => x.json());
+    const r = await fetch('/api/runs?' + filterQuery()).then(x => x.json());
     runs = r.runs;
     render();
   }
@@ -79,20 +81,25 @@
     const status = $('statusFilter').value;
     const mid = $('machineFilter').value;
     const list = runs.filter(r =>
-      (!status || r.status === status) &&
+      (!status || machineStatusOf(r.machine_id) === status) &&
       (!mid || String(r.machine_id) === String(mid))
     );
 
-    const running = runs.filter(r => r.status === 'running').length;
-    const stopped = runs.length - running;
-    const totalSecs = runs.reduce((a, r) => a + (r.run_seconds || 0), 0);
+    const totalSecs = list.reduce((a, r) => a + (r.run_seconds || 0), 0);
     const fmtTotal = (s) => {
       const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
       return `${h}h ${m}m`;
     };
+    const cnt = (s) => list.filter(r => machineStatusOf(r.machine_id) === s).length;
+    const running = cnt('running');
+    const breakdown = cnt('out_of_order');
+    const maintenance = cnt('maintenance');
+    const idle = cnt('idle');
     $('summaryPills').innerHTML =
       `<span class="pill running"><span class="pill-dot" style="background:#34d399"></span>Running: <b>${running}</b></span>` +
-      `<span class="pill stopped"><span class="pill-dot" style="background:#94a3b8"></span>Stopped: <b>${stopped}</b></span>` +
+      `<span class="pill stopped"><span class="pill-dot" style="background:#f87171"></span>Break Down: <b>${breakdown}</b></span>` +
+      `<span class="pill"><span class="pill-dot" style="background:#fbbf24"></span>Maintenance: <b>${maintenance}</b></span>` +
+      `<span class="pill"><span class="pill-dot" style="background:#94a3b8"></span>Idle: <b>${idle}</b></span>` +
       `<span class="pill"><span class="pill-dot" style="background:#4f8cff"></span>Total Run Time: <b>${fmtTotal(totalSecs)}</b></span>`;
 
     $('runTable').querySelector('tbody').innerHTML = list.length
@@ -117,11 +124,21 @@
   $('statusFilter').addEventListener('change', render);
   $('machineFilter').addEventListener('change', render);
 
+  // Keep the export link in sync with the current date + shift filter.
+  function syncExportLink() {
+    const link = document.querySelector('a[href="/api/runs/export"]');
+    if (link) link.href = '/api/runs/export?' + filterQuery();
+  }
+  syncExportLink();
+
   loadMachines().then(loadRuns);
   setInterval(loadRuns, 10000);
   setInterval(refreshMachineStatuses, 10000);
 
   // Live cross-tab sync: refresh when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
+
+  // Global date + shift filter: re-fetch runs + machine statuses on change.
+  window.addEventListener('wf:filter-changed', () => { syncExportLink(); loadMachines().then(loadRuns); });
 </script>
 {% endblock %}

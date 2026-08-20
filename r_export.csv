@@ -1,0 +1,630 @@
+Timestamp,Machine,Code,Shift,From Status,To Status,Updated By,Note
+2026-08-19 08:01:58,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,PS3-TR1,PS3-TR1,day,out_of_order,running,Administrator,Bulk update
+2026-08-19 08:01:58,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB3-CH1,AB3-CH1,day,maintenance,running,Administrator,Bulk update
+2026-08-19 08:01:58,AB2-TW2,AB2-TW2,day,maintenance,running,Administrator,Bulk update
+2026-08-19 07:51:04,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Run started (BulkTest)
+2026-08-19 07:48:48,AB1-TW1,AB1-TW1,day,maintenance,running,Administrator,Run started (Test)
+2026-08-19 07:21:29,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Run started
+2026-08-19 07:20:53,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Run started
+2026-08-18 17:01:21,AB6-TR2,AB6-TR2,day,running,running,Admin,Run started
+2026-08-18 16:57:24,FABRICATION,FABRICATION,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,WT2-TW1,WT2-TW1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,WT1-CH1,WT1-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,SH4-CH4,SH4-CH4,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,SH3-CH3,SH3-CH3,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,SH2-CH2,SH2-CH2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,SH1-CH1,SH1-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,PS2-TW2,PS2-TW2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,PS1-TW1,PS1-TW1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,LT1-VT1,LT1-VT1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,LD2-GR1,LD2-GR1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,LD1-TW1,LD1-TW1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,HR1-CH1,HR1-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,DECO-GR1,DECO-GR1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,CM1-CH1,CM1-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,CL4-TW1,CL4-TW1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,CL3-CH3,CL3-CH3,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,CL2-CH2,CL2-CH2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,CL1-CH1,CL1-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR9-CH6,BR9-CH6,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR8-CH5,BR8-CH5,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR7-CH4,BR7-CH4,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR6-W-TW2,BR6-W-TW2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR5-W-CH3,BR5-W-CH3,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR4-W-CH2,BR4-W-CH2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR3-W-TW1,BR3-W-TW1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR2-CH1,BR2-CH1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR11-W-CH8,BR11-W-CH8,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,BR10-W-CH7,BR10-W-CH7,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,AB7-TR3,AB7-TR3,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,AB6-TR2,AB6-TR2,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:24,AB5-TR1,AB5-TR1,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 16:57:10,AB4-CH2,AB4-CH2,day,idle,running,Admin,
+2026-08-18 16:57:00,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:57:00,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:59,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:59,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:59,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:59,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:59,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:58,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:57,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:28,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:26,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:12,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:10,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:56:08,AB3-CH1,AB3-CH1,day,running,running,Admin,
+2026-08-18 16:55:46,AB3-CH1,AB3-CH1,day,idle,running,Admin,
+2026-08-18 16:55:14,AB2-TW2,AB2-TW2,day,running,running,Admin,
+2026-08-18 16:55:14,AB2-TW2,AB2-TW2,day,running,running,Admin,
+2026-08-18 16:55:14,AB2-TW2,AB2-TW2,day,running,running,Admin,
+2026-08-18 16:55:13,AB2-TW2,AB2-TW2,day,running,running,Admin,
+2026-08-18 16:55:11,AB2-TW2,AB2-TW2,day,running,running,Admin,
+2026-08-18 16:55:08,AB2-TW2,AB2-TW2,day,idle,running,Admin,
+2026-08-18 16:52:01,AB1-TW1,AB1-TW1,day,running,running,Admin,Run started
+2026-08-18 16:51:58,AB1-TW1,AB1-TW1,day,running,running,Admin,Run started
+2026-08-18 16:51:37,AB1-TW1,AB1-TW1,day,running,running,Admin,Run started
+2026-08-18 16:51:35,AB1-TW1,AB1-TW1,day,idle,running,Admin,Run started
+2026-08-18 13:01:24,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:01:24,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 13:00:18,AB4-CH2,AB4-CH2,day,running,running,Administrator,
+2026-08-18 13:00:12,AB4-CH2,AB4-CH2,day,running,running,Administrator,Run started
+2026-08-18 12:59:24,AB4-CH2,AB4-CH2,day,running,running,Administrator,
+2026-08-18 12:59:12,AB4-CH2,AB4-CH2,day,running,running,Administrator,Run started
+2026-08-18 12:38:24,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 12:38:24,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:53:18,BR8-CH5,BR8-CH5,day,idle,running,Administrator,
+2026-08-18 08:46:12,AB3-CH1,AB3-CH1,day,running,running,Administrator,
+2026-08-18 08:45:45,AB2-TW2,AB2-TW2,day,running,running,Administrator,
+2026-08-18 08:41:23,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,PS3-TR1,PS3-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,LT2-CH1,LT2-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR1-UK1,BR1-UK1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:41:23,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Bulk start (idle machines)
+2026-08-18 08:00:14,FABRICATION,FABRICATION,day,idle,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,WT2-TW1,WT2-TW1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,WT1-CH1,WT1-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,SH4-CH4,SH4-CH4,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,SH3-CH3,SH3-CH3,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,SH2-CH2,SH2-CH2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,SH1-CH1,SH1-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,PS3-TR1,PS3-TR1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,PS2-TW2,PS2-TW2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,PS1-TW1,PS1-TW1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,LT2-CH1,LT2-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,LT1-VT1,LT1-VT1,day,out_of_order,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,LD2-GR1,LD2-GR1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,LD1-TW1,LD1-TW1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,HR1-CH1,HR1-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,DECO-GR1,DECO-GR1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,CM1-CH1,CM1-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,CL4-TW1,CL4-TW1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,CL3-CH3,CL3-CH3,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,CL2-CH2,CL2-CH2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,CL1-CH1,CL1-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR9-CH6,BR9-CH6,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR8-CH5,BR8-CH5,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR7-CH4,BR7-CH4,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR6-W-TW2,BR6-W-TW2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR5-W-CH3,BR5-W-CH3,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR4-W-CH2,BR4-W-CH2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR3-W-TW1,BR3-W-TW1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR2-CH1,BR2-CH1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR1-UK1,BR1-UK1,day,out_of_order,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR11-W-CH8,BR11-W-CH8,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,BR10-W-CH7,BR10-W-CH7,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,AB7-TR3,AB7-TR3,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,AB6-TR2,AB6-TR2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,AB5-TR1,AB5-TR1,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 08:00:14,AB4-CH2,AB4-CH2,day,running,running,Admin,Bulk start (idle machines)
+2026-08-18 07:35:07,AB2-TW2,AB2-TW2,day,running,running,Administrator,Run started
+2026-08-18 07:29:27,AB1-TW1,AB1-TW1,day,running,running,Administrator,Electrical
+2026-08-18 07:28:36,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,PS3-TR1,PS3-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,LT2-CH1,LT2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR1-UK1,BR1-UK1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-18 07:28:36,AB1-TW1,AB1-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-17 17:17:36,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Electrical
+2026-08-17 09:13:45,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,
+2026-08-17 09:10:31,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Run started
+2026-08-17 08:42:37,WT2-TW1,WT2-TW1,day,running,running,Administrator,
+2026-08-17 08:42:36,WT2-TW1,WT2-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:42:31,WT1-CH1,WT1-CH1,day,running,running,Administrator,
+2026-08-17 08:42:30,WT1-CH1,WT1-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:42:28,SH4-CH4,SH4-CH4,day,running,running,Administrator,
+2026-08-17 08:42:27,SH4-CH4,SH4-CH4,day,running,running,Administrator,Run started
+2026-08-17 08:42:25,SH3-CH3,SH3-CH3,day,running,running,Administrator,
+2026-08-17 08:42:23,SH3-CH3,SH3-CH3,day,running,running,Administrator,Run started
+2026-08-17 08:42:19,PS2-TW2,PS2-TW2,day,running,running,Administrator,
+2026-08-17 08:42:17,PS2-TW2,PS2-TW2,day,running,running,Administrator,Run started
+2026-08-17 08:42:14,PS2-TW2,PS2-TW2,day,running,running,Administrator,
+2026-08-17 08:42:12,PS1-TW1,PS1-TW1,day,running,running,Administrator,
+2026-08-17 08:42:10,PS1-TW1,PS1-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:42:08,LT2-CH1,LT2-CH1,day,running,running,Administrator,
+2026-08-17 08:42:07,LT2-CH1,LT2-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:41:57,LT1-VT1,LT1-VT1,day,running,running,Administrator,
+2026-08-17 08:41:56,LT1-VT1,LT1-VT1,day,running,running,Administrator,Run started
+2026-08-17 08:41:53,LD2-GR1,LD2-GR1,day,running,running,Administrator,
+2026-08-17 08:41:45,LD2-GR1,LD2-GR1,day,running,running,Administrator,
+2026-08-17 08:41:44,LD2-GR1,LD2-GR1,day,running,running,Administrator,Run started
+2026-08-17 08:41:38,LD2-GR1,LD2-GR1,day,running,running,Administrator,
+2026-08-17 08:41:33,LD1-TW1,LD1-TW1,day,running,running,Administrator,
+2026-08-17 08:41:32,LD1-TW1,LD1-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:41:29,HR1-CH1,HR1-CH1,day,running,running,Administrator,
+2026-08-17 08:41:28,HR1-CH1,HR1-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:41:17,DECO-GR1,DECO-GR1,day,running,running,Administrator,
+2026-08-17 08:41:16,DECO-GR1,DECO-GR1,day,running,running,Administrator,Run started
+2026-08-17 08:41:13,CM1-CH1,CM1-CH1,day,running,running,Administrator,
+2026-08-17 08:41:12,CM1-CH1,CM1-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:41:10,CL4-TW1,CL4-TW1,day,running,running,Administrator,
+2026-08-17 08:41:09,CL4-TW1,CL4-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:41:07,CL3-CH3,CL3-CH3,day,running,running,Administrator,
+2026-08-17 08:41:06,CL3-CH3,CL3-CH3,day,running,running,Administrator,Run started
+2026-08-17 08:41:03,CL2-CH2,CL2-CH2,day,running,running,Administrator,
+2026-08-17 08:41:02,CL2-CH2,CL2-CH2,day,running,running,Administrator,Run started
+2026-08-17 08:41:00,CL1-CH1,CL1-CH1,day,running,running,Administrator,
+2026-08-17 08:40:59,CL1-CH1,CL1-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:40:57,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,
+2026-08-17 08:40:55,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Run started
+2026-08-17 08:40:52,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,
+2026-08-17 08:40:51,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Run started
+2026-08-17 08:40:49,BR4-W-CH2,BR4-W-CH2,day,running,running,Administrator,
+2026-08-17 08:40:48,BR4-W-CH2,BR4-W-CH2,day,running,running,Administrator,Run started
+2026-08-17 08:40:45,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,
+2026-08-17 08:40:44,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:40:40,BR2-CH1,BR2-CH1,day,running,running,Administrator,
+2026-08-17 08:40:39,BR2-CH1,BR2-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:40:37,BR11-W-CH8,BR11-W-CH8,day,running,running,Administrator,
+2026-08-17 08:40:36,BR11-W-CH8,BR11-W-CH8,day,running,running,Administrator,Run started
+2026-08-17 08:40:34,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,
+2026-08-17 08:40:33,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Run started
+2026-08-17 08:40:21,BR1-UK1,BR1-UK1,day,running,running,Administrator,
+2026-08-17 08:40:20,BR1-UK1,BR1-UK1,day,running,running,Administrator,Run started
+2026-08-17 08:40:17,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,
+2026-08-17 08:40:16,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,Run started
+2026-08-17 08:40:14,AB7-TR3,AB7-TR3,day,running,running,Administrator,
+2026-08-17 08:40:12,AB7-TR3,AB7-TR3,day,running,running,Administrator,Run started
+2026-08-17 08:40:09,AB6-TR2,AB6-TR2,day,running,running,Administrator,
+2026-08-17 08:40:08,AB6-TR2,AB6-TR2,day,running,running,Administrator,Run started
+2026-08-17 08:40:04,AB5-TR1,AB5-TR1,day,running,running,Administrator,
+2026-08-17 08:40:03,AB5-TR1,AB5-TR1,day,running,running,Administrator,Run started
+2026-08-17 08:40:00,AB4-CH2,AB4-CH2,day,running,running,Administrator,
+2026-08-17 08:39:58,AB4-CH2,AB4-CH2,day,running,running,Administrator,Run started
+2026-08-17 08:39:53,AB3-CH1,AB3-CH1,day,running,running,Administrator,
+2026-08-17 08:39:51,AB3-CH1,AB3-CH1,day,running,running,Administrator,Run started
+2026-08-17 08:39:48,AB2-TW2,AB2-TW2,day,running,running,Administrator,
+2026-08-17 08:39:47,AB2-TW2,AB2-TW2,day,running,running,Administrator,Run started
+2026-08-17 08:39:39,AB1-TW1,AB1-TW1,day,running,running,Administrator,
+2026-08-17 08:39:37,AB1-TW1,AB1-TW1,day,running,running,Administrator,Run started
+2026-08-17 08:37:01,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,PS3-TR1,PS3-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,LT2-CH1,LT2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR1-UK1,BR1-UK1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:37:01,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,FABRICATION,FABRICATION,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,WT2-TW1,WT2-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,WT1-CH1,WT1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,SH4-CH4,SH4-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,SH3-CH3,SH3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,SH2-CH2,SH2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,SH1-CH1,SH1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,PS3-TR1,PS3-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,PS2-TW2,PS2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,PS1-TW1,PS1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,LT2-CH1,LT2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,LT1-VT1,LT1-VT1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,LD2-GR1,LD2-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,HR1-CH1,HR1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,DECO-GR1,DECO-GR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,CM1-CH1,CM1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,CL4-TW1,CL4-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,CL3-CH3,CL3-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,CL2-CH2,CL2-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,CL1-CH1,CL1-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR8-CH5,BR8-CH5,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR7-CH4,BR7-CH4,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR6-W-TW2,BR6-W-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR5-W-CH3,BR5-W-CH3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR4-W-CH2,BR4-W-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR3-W-TW1,BR3-W-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR2-CH1,BR2-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR1-UK1,BR1-UK1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR11-W-CH8,BR11-W-CH8,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,BR10-W-CH7,BR10-W-CH7,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-17 08:34:13,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,FABRICATION,FABRICATION,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,WT2-TW1,WT2-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,WT1-CH1,WT1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,SH4-CH4,SH4-CH4,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,SH3-CH3,SH3-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,SH2-CH2,SH2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,SH1-CH1,SH1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,PS3-TR1,PS3-TR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,PS2-TW2,PS2-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,PS1-TW1,PS1-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,LT2-CH1,LT2-CH1,day,out_of_order,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,LT1-VT1,LT1-VT1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,LD2-GR1,LD2-GR1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,LD1-TW1,LD1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,HR1-CH1,HR1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,DECO-GR1,DECO-GR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,CM1-CH1,CM1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,CL4-TW1,CL4-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,CL3-CH3,CL3-CH3,day,out_of_order,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,CL2-CH2,CL2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,CL1-CH1,CL1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR9-CH6,BR9-CH6,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR8-CH5,BR8-CH5,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR7-CH4,BR7-CH4,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR4-W-CH2,BR4-W-CH2,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR1-UK1,BR1-UK1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR11-W-CH8,BR11-W-CH8,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AR/CJ-TR1,AR-CJ-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB6-TR2,AB6-TR2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB5-TR1,AB5-TR1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB4-CH2,AB4-CH2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB3-CH1,AB3-CH1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:37:21,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,WT2-TW1,WT2-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,WT1-CH1,WT1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,SH3-CH3,SH3-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,SH2-CH2,SH2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,SH1-CH1,SH1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,PS3-TR1,PS3-TR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,PS2-TW2,PS2-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,PS1-TW1,PS1-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,LT1-VT1,LT1-VT1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,HR1-CH1,HR1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,DECO-GR1,DECO-GR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,CM1-CH1,CM1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,CL4-TW1,CL4-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,CL2-CH2,CL2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,CL1-CH1,CL1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR8-CH5,BR8-CH5,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR7-CH4,BR7-CH4,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR1-UK1,BR1-UK1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:33:50,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:42,WT2-TW1,WT2-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,WT1-CH1,WT1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,SH3-CH3,SH3-CH3,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,SH2-CH2,SH2-CH2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,SH1-CH1,SH1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,PS3-TR1,PS3-TR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,PS2-TW2,PS2-TW2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,PS1-TW1,PS1-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,LT1-VT1,LT1-VT1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,HR1-CH1,HR1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,DECO-GR1,DECO-GR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,CM1-CH1,CM1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,CL4-TW1,CL4-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,CL2-CH2,CL2-CH2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,CL1-CH1,CL1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR8-CH5,BR8-CH5,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR7-CH4,BR7-CH4,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR1-UK1,BR1-UK1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:42,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:31:21,WT2-TW1,WT2-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,WT1-CH1,WT1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,SH3-CH3,SH3-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,SH2-CH2,SH2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,SH1-CH1,SH1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,PS3-TR1,PS3-TR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,PS2-TW2,PS2-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,PS1-TW1,PS1-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,LT1-VT1,LT1-VT1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,HR1-CH1,HR1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,DECO-GR1,DECO-GR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,CM1-CH1,CM1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,CL4-TW1,CL4-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,CL2-CH2,CL2-CH2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,CL1-CH1,CL1-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR8-CH5,BR8-CH5,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR7-CH4,BR7-CH4,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR1-UK1,BR1-UK1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:31:21,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,WT2-TW1,WT2-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,WT1-CH1,WT1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,SH3-CH3,SH3-CH3,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,SH2-CH2,SH2-CH2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,SH1-CH1,SH1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,PS3-TR1,PS3-TR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,PS2-TW2,PS2-TW2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,PS1-TW1,PS1-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,LT1-VT1,LT1-VT1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,HR1-CH1,HR1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,DECO-GR1,DECO-GR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,CM1-CH1,CM1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,CL4-TW1,CL4-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,CL2-CH2,CL2-CH2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,CL1-CH1,CL1-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR8-CH5,BR8-CH5,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR7-CH4,BR7-CH4,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR6-W-TW2,BR6-W-TW2,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR5-W-CH3,BR5-W-CH3,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR3-W-TW1,BR3-W-TW1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR1-UK1,BR1-UK1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,BR10-W-CH7,BR10-W-CH7,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,Bulk stop (all machines)
+2026-08-15 16:17:17,WT2-TW1,WT2-TW1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,WT1-CH1,WT1-CH1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,SH3-CH3,SH3-CH3,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,SH2-CH2,SH2-CH2,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,SH1-CH1,SH1-CH1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,PS3-TR1,PS3-TR1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,PS2-TW2,PS2-TW2,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,PS1-TW1,PS1-TW1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,LT1-VT1,LT1-VT1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,HR1-CH1,HR1-CH1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,DECO-GR1,DECO-GR1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,CM1-CH1,CM1-CH1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,CL4-TW1,CL4-TW1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,CL2-CH2,CL2-CH2,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,CL1-CH1,CL1-CH1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR8-CH5,BR8-CH5,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR7-CH4,BR7-CH4,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR6-W-TW2,BR6-W-TW2,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR5-W-CH3,BR5-W-CH3,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR3-W-TW1,BR3-W-TW1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR2-CH1,BR2-CH1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR1-UK1,BR1-UK1,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,BR10-W-CH7,BR10-W-CH7,day,initial,running,Administrator,Bulk start (all machines)
+2026-08-15 16:17:17,AR/CJ-TR1,AR-CJ-TR1,day,running,running,Administrator,Bulk start (all machines)
+2026-08-15 16:07:34,AB2-TW2,AB2-TW2,day,idle,running,Administrator,Run started
+2026-08-15 15:41:40,AB1-TW1,AB1-TW1,day,idle,running,Administrator,
+2026-08-15 14:18:03,AB1-TW1,AB1-TW1,day,running,running,Administrator,
+2026-08-15 14:18:00,AB1-TW1,AB1-TW1,day,idle,running,Administrator,Run started
+2026-08-15 13:48:12,AB1-TW1,AB1-TW1,day,running,running,Administrator,Run started (TEST_ITEM)
+2026-08-15 09:30:43,AB1-TW1,AB1-TW1,day,idle,running,Administrator,
+2026-08-15 09:28:08,AB1-TW1,AB1-TW1,day,running,running,Administrator,
+2026-08-15 08:32:32,BR9-CH6,BR9-CH6,day,running,running,Administrator,
+2026-08-15 08:32:27,BR9-CH6,BR9-CH6,day,initial,running,Administrator,Run started
+2026-08-15 08:29:18,AB7-TR3,AB7-TR3,day,idle,running,Administrator,
+2026-08-15 08:29:06,AB7-TR3,AB7-TR3,day,idle,running,Administrator,Run started
+2026-08-15 08:28:13,AB1-TW1,AB1-TW1,day,running,running,Administrator,
+2026-08-15 07:05:25,AB1-TW1,AB1-TW1,day,idle,running,Administrator,
+2026-08-15 06:31:42,LD1-TW1,LD1-TW1,night,running,running,Administrator,
+2026-08-15 06:31:37,LD1-TW1,LD1-TW1,night,initial,running,Administrator,Run started
+2026-08-15 06:19:57,AR/CJ-TR1,AR-CJ-TR1,night,initial,running,Administrator,Run started
+2026-08-15 06:17:57,AB1-TW1,AB1-TW1,night,running,running,Administrator,
+2026-08-15 06:17:48,AB1-TW1,AB1-TW1,night,running,running,Administrator,Run started
+2026-08-15 06:01:35,AB1-TW1,AB1-TW1,night,running,running,Administrator,Run started
+2026-08-15 05:59:44,BR2-CH1,BR2-CH1,night,initial,running,Administrator,Run started
+2026-08-15 05:58:21,AB1-TW1,AB1-TW1,night,running,running,Administrator,Run started (ANGLE BEAD)
+2026-08-15 05:53:20,AB7-TR3,AB7-TR3,night,running,running,Administrator,
+2026-08-15 05:53:13,AB7-TR3,AB7-TR3,night,maintenance,running,Administrator,Run started (ANGLE BEAD)
+2026-08-15 05:52:33,AB1-TW1,AB1-TW1,night,running,running,Administrator,
+2026-08-15 05:52:23,AB1-TW1,AB1-TW1,night,maintenance,running,Administrator,Run started (ANGLE BEAD)
+2026-08-15 05:51:09,AB1-TW1,AB1-TW1,night,initial,running,Administrator,Run started (ANGLE BEAD)

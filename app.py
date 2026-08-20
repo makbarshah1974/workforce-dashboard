@@ -74,6 +74,21 @@ def now_uae():
     return datetime.now(UAE_TZ).replace(tzinfo=None)
 
 
+def shift_of(dt):
+    """Return the shift ('day' | 'night') for a given datetime.
+
+    Day shift: 07:00–19:00, Night shift: 19:00–07:00 (UAE local time).
+    """
+    if dt is None:
+        return "day"
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt)
+        except ValueError:
+            return "day"
+    return "day" if 7 <= dt.hour < 19 else "night"
+
+
 # ---------------------------------------------------------------------------
 # Database models
 # ---------------------------------------------------------------------------
@@ -165,6 +180,9 @@ class Machine(db.Model):
     notes = db.Column(db.Text, default="")
     updated_by = db.Column(db.String(120), default="")
     updated_at = db.Column(db.DateTime, default=now_uae, onupdate=now_uae)
+    # Planned productive hours for this machine per shift (e.g. 9h vs 11h).
+    day_hours = db.Column(db.Integer, default=11)
+    night_hours = db.Column(db.Integer, default=11)
 
     def to_dict(self, group_name=None, product_name=None):
         return {
@@ -180,6 +198,8 @@ class Machine(db.Model):
             "notes": self.notes,
             "updated_by": self.updated_by,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "day_hours": self.day_hours,
+            "night_hours": self.night_hours,
         }
 
 
@@ -194,6 +214,7 @@ class MachineLog(db.Model):
     note = db.Column(db.Text, default="")
     updated_by = db.Column(db.String(120), default="")
     timestamp = db.Column(db.DateTime, default=now_uae)
+    shift = db.Column(db.String(16), default="day")  # "day" or "night"
 
     def to_dict(self, machine_name=None):
         return {
@@ -204,6 +225,7 @@ class MachineLog(db.Model):
             "note": self.note,
             "updated_by": self.updated_by,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "shift": self.shift,
         }
 
 
@@ -224,6 +246,7 @@ class ProductionRun(db.Model):
     status = db.Column(db.String(32), default="running")  # running | stopped
     note = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    shift = db.Column(db.String(16), default="day")  # "day" or "night"
 
     def run_seconds(self):
         end = self.stopped_at or now_uae()
@@ -231,12 +254,14 @@ class ProductionRun(db.Model):
             return 0
         return int((end - self.started_at).total_seconds())
 
-    def to_dict(self, machine_name=None, product_name=None, group_name=None):
+    def to_dict(self, machine_name=None, product_name=None, group_name=None,
+                machine_status=None):
         secs = self.run_seconds()
         return {
             "id": self.id,
             "machine_id": self.machine_id,
             "machine_name": machine_name,
+            "machine_status": machine_status,
             "product_id": self.product_id,
             "product_name": product_name,
             "group_id": self.group_id,
@@ -248,6 +273,7 @@ class ProductionRun(db.Model):
             "stopped_at": self.stopped_at.isoformat() if self.stopped_at else None,
             "status": self.status,
             "note": self.note,
+            "shift": self.shift,
             "run_seconds": secs,
             "run_time": _fmt_duration(secs),
         }
@@ -567,18 +593,57 @@ def workforce_page():
 @app.route("/api/summary")
 @login_required
 def api_summary():
+    date_str = request.args.get("date")
+    shift = (request.args.get("shift") or "").strip().lower()
+    historical = False
+    as_of = None
+    if date_str:
+        try:
+            d = date.fromisoformat(date_str)
+            historical = True
+            # End of the selected shift on that date.
+            if shift == "night":
+                as_of = datetime(d.year, d.month, d.day, 7, 0, 0) + timedelta(days=1)
+            else:
+                as_of = datetime(d.year, d.month, d.day, 19, 0, 0)
+        except ValueError:
+            pass
+
     machines = Machine.query.all()
     total = len(machines)
     by_status = {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0}
-    for m in machines:
-        by_status[m.status] = by_status.get(m.status, 0) + 1
+
+    if historical and as_of:
+        # Reconstruct each machine's status as of the end of the chosen shift.
+        last_logs = (
+            MachineLog.query
+            .filter(MachineLog.timestamp <= as_of)
+            .order_by(MachineLog.machine_id, MachineLog.timestamp.desc())
+            .all()
+        )
+        status_at = {}
+        for l in last_logs:
+            status_at.setdefault(l.machine_id, l.status)
+        for m in machines:
+            st = status_at.get(m.id, "idle")
+            by_status[st] = by_status.get(st, 0) + 1
+    else:
+        for m in machines:
+            by_status[m.status] = by_status.get(m.status, 0) + 1
 
     groups = {g.id: g.name for g in Group.query.all()}
     by_group = {}
     for m in machines:
         gname = groups.get(m.group_id, "Unassigned")
         by_group.setdefault(gname, {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0})
-        by_group[gname][m.status] = by_group[gname].get(m.status, 0) + 1
+        if historical and as_of:
+            last = (MachineLog.query.filter_by(machine_id=m.id)
+                    .filter(MachineLog.timestamp <= as_of)
+                    .order_by(MachineLog.timestamp.desc()).first())
+            st = last.status if last else "idle"
+        else:
+            st = m.status
+        by_group[gname][st] = by_group[gname].get(st, 0) + 1
 
     logs = (MachineLog.query.order_by(MachineLog.timestamp.desc()).limit(8)).all()
     machine_names = {m.id: m.name for m in machines}
@@ -636,10 +701,37 @@ def api_machine_status(mid):
     m.updated_by = session.get("display_name", session.get("username", "Unknown"))
     db.session.add(m)
     log = MachineLog(machine_id=m.id, status=new_status, note=note,
-                    updated_by=m.updated_by)
+                    updated_by=m.updated_by, shift=shift_of(now_uae()))
     db.session.add(log)
     db.session.commit()
     return jsonify({"machine": m.to_dict(), "log": log.to_dict(machine_name=m.name)})
+
+
+@app.route("/api/machine/<int:mid>/shift-hours", methods=["POST"])
+@login_required
+def api_machine_shift_hours(mid):
+    """Update planned productive hours for the day/night shift of a machine."""
+    m = Machine.query.get_or_404(mid)
+    data = request.get_json(silent=True) or {}
+    actor = session.get("display_name", session.get("username", "Unknown"))
+    changed = False
+    for col in ("day_hours", "night_hours"):
+        if col in data and data[col] is not None:
+            try:
+                val = int(data[col])
+            except (TypeError, ValueError):
+                return jsonify({"error": f"Invalid {col}"}), 400
+            if val < 0:
+                return jsonify({"error": f"{col} must be >= 0"}), 400
+            if getattr(m, col) != val:
+                setattr(m, col, val)
+                changed = True
+    if changed:
+        m.updated_by = actor
+        m.updated_at = now_uae()
+        db.session.add(m)
+        db.session.commit()
+    return jsonify({"machine": m.to_dict()})
 
 
 @app.route("/api/machines/bulk-start", methods=["POST"])
@@ -659,7 +751,8 @@ def api_machines_bulk_start():
         m.updated_at = now
         db.session.add(m)
         db.session.add(MachineLog(machine_id=m.id, status="running",
-                                  note="Bulk start (idle machines)", updated_by=actor))
+                                  note="Bulk start (idle machines)", updated_by=actor,
+                                  shift=shift_of(now)))
         count += 1
     db.session.commit()
     return jsonify({"updated": count})
@@ -682,7 +775,8 @@ def api_machines_bulk_stop():
         m.updated_at = now
         db.session.add(m)
         db.session.add(MachineLog(machine_id=m.id, status="idle",
-                                  note="Bulk stop (running machines)", updated_by=actor))
+                                  note="Bulk stop (running machines)", updated_by=actor,
+                                  shift=shift_of(now)))
         count += 1
     db.session.commit()
     return jsonify({"updated": count})
@@ -758,6 +852,9 @@ def _build_report_events():
             q = q.filter(MachineLog.timestamp <= datetime.fromisoformat(date_to))
         except ValueError:
             pass
+    shift = (request.args.get("shift") or "").strip().lower()
+    if shift in ("day", "night"):
+        q = q.filter(MachineLog.shift == shift)
 
     logs = q.order_by(MachineLog.timestamp.asc()).all()
     machines = Machine.query.all()
@@ -1157,6 +1254,31 @@ def _ensure_columns():
             u.is_active = True
     db.session.commit()
 
+    # New shift columns on activity tables + per-machine planned shift hours.
+    existing_ml = {c["name"] for c in inspector.get_columns("machine_logs")}
+    if "shift" not in existing_ml:
+        with db.engine.begin() as conn:
+            conn.execute(db.text("ALTER TABLE machine_logs ADD COLUMN shift VARCHAR(16) DEFAULT 'day'"))
+    existing_pr = {c["name"] for c in inspector.get_columns("production_runs")}
+    if "shift" not in existing_pr:
+        with db.engine.begin() as conn:
+            conn.execute(db.text("ALTER TABLE production_runs ADD COLUMN shift VARCHAR(16) DEFAULT 'day'"))
+    existing_m = {c["name"] for c in inspector.get_columns("machines")}
+    for col, col_type in (("day_hours", "INTEGER"), ("night_hours", "INTEGER")):
+        if col not in existing_m:
+            with db.engine.begin() as conn:
+                conn.execute(db.text(f"ALTER TABLE machines ADD COLUMN {col} {col_type} DEFAULT 11"))
+
+    # Backfill shift for any existing rows that still have the default 'day'
+    # but were actually created at a different time of day.
+    for log in MachineLog.query.filter_by(shift="day").all():
+        if log.timestamp and shift_of(log.timestamp) == "night":
+            log.shift = "night"
+    for run in ProductionRun.query.filter_by(shift="day").all():
+        if run.started_at and shift_of(run.started_at) == "night":
+            run.shift = "night"
+    db.session.commit()
+
 
 def _migrate_db():
     """Rebuild daily_records so (record_date, shift) is the unique key."""
@@ -1209,6 +1331,8 @@ def runs_page():
 def api_runs():
     machine_id = request.args.get("machine_id")
     status = request.args.get("status")  # running | stopped
+    date_str = request.args.get("date")
+    shift = (request.args.get("shift") or "").strip().lower()
     q = ProductionRun.query
     if machine_id:
         try:
@@ -1217,14 +1341,24 @@ def api_runs():
             pass
     if status:
         q = q.filter(ProductionRun.status == status)
+    if date_str:
+        try:
+            d = date.fromisoformat(date_str)
+            q = q.filter(db.func.date(ProductionRun.started_at) == d.isoformat())
+        except ValueError:
+            pass
+    if shift in ("day", "night"):
+        q = q.filter(ProductionRun.shift == shift)
     runs = q.order_by(ProductionRun.started_at.desc()).limit(200).all()
     machines = {m.id: m.name for m in Machine.query.all()}
+    machine_status = {m.id: m.status for m in Machine.query.all()}
     products = {p.id: p.name for p in Product.query.all()}
     groups = {g.id: g.name for g in Group.query.all()}
     return jsonify({
         "runs": [r.to_dict(machine_name=machines.get(r.machine_id),
                            product_name=products.get(r.product_id),
-                           group_name=groups.get(r.group_id)) for r in runs]
+                           group_name=groups.get(r.group_id),
+                           machine_status=machine_status.get(r.machine_id)) for r in runs]
     })
 
 
@@ -1260,7 +1394,7 @@ def api_run_start():
     db.session.add(m)
     db.session.add(MachineLog(machine_id=m.id, status="running",
                               note="Run started" + (f" ({run.item_name})" if run.item_name else ""),
-                              updated_by=run.operator))
+                              updated_by=run.operator, shift=shift_of(run.started_at)))
     db.session.commit()
     return jsonify({"run": run.to_dict(machine_name=m.name)}), 201
 
@@ -1283,7 +1417,7 @@ def api_run_stop(rid):
             db.session.add(m)
             db.session.add(MachineLog(machine_id=m.id, status="idle",
                                       note=f"Run stopped ({_fmt_duration(run.run_seconds())})",
-                                      updated_by=m.updated_by))
+                                      updated_by=m.updated_by, shift=shift_of(run.stopped_at)))
         db.session.commit()
     return jsonify({"run": run.to_dict()})
 
@@ -1291,7 +1425,18 @@ def api_run_stop(rid):
 @app.route("/api/runs/export")
 @login_required
 def api_runs_export():
-    runs = ProductionRun.query.order_by(ProductionRun.started_at.desc()).limit(500).all()
+    date_str = request.args.get("date")
+    shift = (request.args.get("shift") or "").strip().lower()
+    q = ProductionRun.query
+    if date_str:
+        try:
+            d = date.fromisoformat(date_str)
+            q = q.filter(db.func.date(ProductionRun.started_at) == d.isoformat())
+        except ValueError:
+            pass
+    if shift in ("day", "night"):
+        q = q.filter(ProductionRun.shift == shift)
+    runs = q.order_by(ProductionRun.started_at.desc()).limit(500).all()
     machines = {m.id: m.name for m in Machine.query.all()}
     products = {p.id: p.name for p in Product.query.all()}
     groups = {g.id: g.name for g in Group.query.all()}

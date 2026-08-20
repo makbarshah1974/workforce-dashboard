@@ -1,0 +1,10 @@
+import json
+def load(p): return json.load(open(p))
+m = load('fm.json')
+s = load('fs.json')
+sh = load('fsh.json')
+se = load('fse.json')
+print('machine_id=1 count=', m['count'], 'all_match=', all(e['machine_id'] == 1 for e in m['events']))
+print('status=running count=', s['count'], 'all_match=', all(e['to_status'] == 'running' for e in s['events']))
+print('shift=day count=', sh['count'], 'all_match=', all(e.get('shift') == 'day' for e in sh['events']))
+print('search=AB2 count=', se['count'], 'all_match=', all('AB2' in e['machine_name'] for e in se['events']))
