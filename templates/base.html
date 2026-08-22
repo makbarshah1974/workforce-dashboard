@@ -39,10 +39,10 @@
   <!-- Mobile global date + shift filter -->
   <div class="lg:hidden flex items-center gap-2 px-4 py-2 bg-slate-800 border-b border-slate-700">
     <input type="date" class="wf-date-input flex-1 min-w-0 bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-    <div class="inline-flex rounded-lg border border-slate-600 overflow-hidden">
-      <button type="button" data-shift="day" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
-      <button type="button" data-shift="night" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
-    </div>
+      <div class="inline-flex rounded-lg border border-slate-600">
+        <button type="button" data-shift="day" class="wf-shift-btn whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
+        <button type="button" data-shift="night" class="wf-shift-btn whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
+      </div>
   </div>
 
   <div class="flex min-h-screen">
@@ -119,10 +119,10 @@
           <!-- Global date + shift filter -->
           <div class="flex items-center gap-2">
             <input type="date" id="filterDateDesktop" class="wf-date-input bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-            <div class="inline-flex rounded-lg border border-slate-600 overflow-hidden">
-              <button type="button" data-shift="day" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
-              <button type="button" data-shift="night" class="wf-shift-btn px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
-            </div>
+      <div class="inline-flex rounded-lg border border-slate-600">
+        <button type="button" data-shift="day" class="wf-shift-btn whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all duration-200 ease-in-out">Day</button>
+        <button type="button" data-shift="night" class="wf-shift-btn whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 border-l border-slate-600 transition-all duration-200 ease-in-out">Night</button>
+      </div>
           </div>
           <span id="clock" class="text-sm text-slate-400 tabular-nums"></span>
           <button id="themeToggle3" class="p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">

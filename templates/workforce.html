@@ -62,12 +62,20 @@
           <input type="number" id="wf-prestige" min="0" placeholder="0" />
         </div>
         <div class="field">
-          <label for="wf-working">Working Machines</label>
-          <input type="number" id="wf-working" min="0" placeholder="0" />
+          <label for="wf-leave">Staff On Leave (count)</label>
+          <input type="number" id="wf-leave" min="0" placeholder="0" />
         </div>
         <div class="field">
-          <label for="wf-broken">Break Down Machines</label>
-          <input type="number" id="wf-broken" min="0" placeholder="0" />
+          <label for="wf-leave-names">Staff On Leave Names</label>
+          <input type="text" id="wf-leave-names" placeholder="Comma separated names" />
+        </div>
+        <div class="field">
+          <label for="wf-loading">Loading Staff (count)</label>
+          <input type="number" id="wf-loading" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label for="wf-loading-names">Loading Staff Names</label>
+          <input type="text" id="wf-loading-names" placeholder="Comma separated names" />
         </div>
       </div>
 
@@ -95,8 +103,8 @@
           <th>TopQuality</th>
           <th>BestCare</th>
           <th>Prestige</th>
-          <th>Working</th>
-          <th>Break Down</th>
+          <th>Staff On Leave</th>
+          <th>Loading Staff</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -121,32 +129,37 @@
     { key: 'topquality_staff',       label: 'TopQuality',             cls: 'c4',     type: 'staff' },
     { key: 'bestcare_staff',         label: 'BestCare',               cls: 'c4',     type: 'staff' },
     { key: 'prestige_staff',         label: 'Prestige',               cls: 'c4',     type: 'staff' },
-    { key: 'working_machines',       label: 'Working Machines',       cls: 'c1',     type: 'working' },
-    { key: 'out_of_order_machines',  label: 'Break Down Machines',    cls: 'c2',     type: 'broken' },
+    { key: 'workers_on_leave',       namesKey: 'workers_on_leave_names', label: 'Staff On Leave',         cls: 'c1',     type: 'stafflist' },
+    { key: 'loading_staff',          namesKey: 'loading_staff_names',    label: 'Loading Staff',          cls: 'c2',     type: 'stafflist' },
   ];
 
-  function dropdownHtml(type, rec, val) {
+  function dropdownHtml(k, rec, val) {
     if (!rec) return '<div class="kpi-empty">No record yet.</div>';
-    if (type === 'total') {
+    if (k.type === 'total') {
       const rows = [
         ['Metex', rec.metex_staff], ['CSK', rec.csk_staff],
         ['TopQuality', rec.topquality_staff], ['BestCare', rec.bestcare_staff],
         ['Prestige', rec.prestige_staff],
-        ['Workers on Leave', rec.workers_on_leave.length],
-        ['Maintenance', rec.maintenance_staff.length],
-        ['Loading', rec.loading_staff.length],
+        ['Workers on Leave', rec.workers_on_leave],
+        ['Maintenance', Array.isArray(rec.maintenance_staff) ? rec.maintenance_staff.length : 0],
+        ['Loading', rec.loading_staff],
       ];
       return '<ul class="kpi-list">' + rows.map(([n, v]) =>
         `<li class="kpi-li"><span class="kpi-li-main">${n}</span><span class="kpi-li-sub"><b>${v}</b> people</span></li>`
       ).join('') + '</ul>';
     }
-    if (type === 'staff') {
+    if (k.type === 'staff') {
       const total = rec.total_workforce || 0;
       const pct = total ? Math.round((val / total) * 100) : 0;
       return `<div class="kpi-li"><span class="kpi-li-sub">Headcount: <b>${val}</b> people · ${pct}% of total</span></div>`;
     }
-    if (type === 'working' || type === 'broken') {
-      const names = type === 'working' ? rec.working_machine_names : rec.out_of_order_machine_names;
+    if (k.type === 'stafflist') {
+      // API returns *_names as arrays; accept both array and string safely.
+      const raw = rec[k.namesKey];
+      const names = (Array.isArray(raw)
+        ? raw
+        : String(raw || '').split(',')
+      ).map(s => String(s).trim()).filter(Boolean);
       if (!names.length) return '<div class="kpi-empty">None listed.</div>';
       return '<ul class="kpi-list">' + names.map(n =>
         `<li class="kpi-li"><span class="kpi-li-main">${n}</span></li>`
@@ -155,19 +168,27 @@
     return '<div class="kpi-empty">—</div>';
   }
 
+  function selectedDate() {
+    return $('wf-date').value || todayISO();
+  }
+  function selectedShift() {
+    return document.querySelector('input[name="wf-shift"]:checked').value;
+  }
+
   async function loadKpis() {
-    const res = await fetch('/api/workforce/summary');
+    const res = await fetch(`/api/workforce/summary?date=${encodeURIComponent(selectedDate())}&shift=${selectedShift()}`);
     const data = await res.json();
     const rec = data.record;
     $('wfKpiGrid').innerHTML = WF_KPIS.map(k => {
       const val = rec ? (rec[k.key] || 0) : 0;
-      const dd = dropdownHtml(k.type, rec, val);
+      const faceVal = k.type === 'stafflist' ? (Number(val) || 0) : val;
+      const dd = dropdownHtml(k, rec, val);
       return `<div class="card kpi-card ${k.cls}" data-type="${k.type}" tabindex="0" role="button" aria-expanded="false">
                 <div class="kpi-head">
                   <div class="label">${k.label}</div>
                   <span class="kpi-caret" aria-hidden="true">▾</span>
                 </div>
-                <div class="value">${val}</div>
+                <div class="value">${faceVal}</div>
                 <div class="kpi-hint">Click to view details</div>
                 <div class="kpi-dropdown" hidden>
                   <div class="kpi-dropdown-inner">${dd}</div>
@@ -202,7 +223,7 @@
     const data = await res.json();
     const r = data.record;
     if (!r) {
-      ['wf-total','wf-metex','wf-csk','wf-topq','wf-best','wf-prestige','wf-working','wf-broken']
+      ['wf-total','wf-metex','wf-csk','wf-topq','wf-best','wf-prestige','wf-leave','wf-leave-names','wf-loading','wf-loading-names']
         .forEach(id => $(id).value = '');
       return;
     }
@@ -212,12 +233,14 @@
     $('wf-topq').value     = r.topquality_staff || 0;
     $('wf-best').value     = r.bestcare_staff || 0;
     $('wf-prestige').value = r.prestige_staff || 0;
-    $('wf-working').value  = r.working_machines || 0;
-    $('wf-broken').value   = r.out_of_order_machines || 0;
+    $('wf-leave').value    = r.workers_on_leave || 0;
+    $('wf-leave-names').value = r.workers_on_leave_names || '';
+    $('wf-loading').value  = r.loading_staff || 0;
+    $('wf-loading-names').value = r.loading_staff_names || '';
   }
 
   async function loadHistory() {
-    const res = await fetch('/api/history?limit=50');
+    const res = await fetch(`/api/history?limit=50&date=${encodeURIComponent(selectedDate())}&shift=${selectedShift()}`);
     const data = await res.json();
     const tbody = $('wfTable').querySelector('tbody');
     if (!data.records.length) {
@@ -234,8 +257,8 @@
         <td>${r.topquality_staff || 0}</td>
         <td>${r.bestcare_staff || 0}</td>
         <td>${r.prestige_staff || 0}</td>
-        <td>${r.working_machines || 0}</td>
-        <td>${r.out_of_order_machines || 0}</td>
+        <td>${r.workers_on_leave || 0}</td>
+        <td>${r.loading_staff || 0}</td>
       </tr>`).join('');
   }
 
@@ -250,8 +273,10 @@
       topquality_staff: Number($('wf-topq').value) || 0,
       bestcare_staff: Number($('wf-best').value) || 0,
       prestige_staff: Number($('wf-prestige').value) || 0,
-      working_machines: Number($('wf-working').value) || 0,
-      out_of_order_machines: Number($('wf-broken').value) || 0,
+      workers_on_leave: Number($('wf-leave').value) || 0,
+      workers_on_leave_names: $('wf-leave-names').value.trim(),
+      loading_staff: Number($('wf-loading').value) || 0,
+      loading_staff_names: $('wf-loading-names').value.trim(),
     };
     const status = $('wfStatus');
     status.textContent = 'Saving…';
@@ -283,5 +308,21 @@
   loadRecordIntoForm();
   loadKpis();
   loadHistory();
+
+  // Sync the in-page date/shift controls with the global header filter and
+  // re-fetch when it changes (so the header filter affects this page too).
+  function syncFromGlobalFilter() {
+    if (window.__wfFilter && window.__wfFilter.date) {
+      $('wf-date').value = window.__wfFilter.date;
+    }
+    if (window.__wfFilter && window.__wfFilter.shift) {
+      const radio = document.querySelector(`input[name="wf-shift"][value="${window.__wfFilter.shift}"]`);
+      if (radio) radio.checked = true;
+    }
+    loadRecordIntoForm();
+    loadKpis();
+    loadHistory();
+  }
+  window.addEventListener('wf:filter-changed', syncFromGlobalFilter);
 </script>
 {% endblock %}

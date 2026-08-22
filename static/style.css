@@ -736,3 +736,13 @@ tbody tr:last-child td { border-bottom: 0; }
   .auth-card { padding: 1.25rem; }
   .role-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   SHIFT TOGGLE — prevent label truncation (Day/Night)
+   The buttons sit in a flex row that can get tight; keep them
+   from shrinking and never wrap/ellipsize the label.
+   ============================================================ */
+.wf-shift-btn {
+  white-space: nowrap;
+  flex: none;
+}

@@ -47,6 +47,13 @@
           <label>Note</label>
           <textarea id="modalNote" rows="3" placeholder="Optional note (e.g. reason for downtime)"></textarea>
         </div>
+        <div class="field">
+          <label>Shift</label>
+          <select id="modalShift">
+            <option value="day">Day</option>
+            <option value="night">Night</option>
+          </select>
+        </div>
         <p class="modal-meta" id="modalMeta"></p>
       </div>
       <div class="modal-foot">
@@ -244,6 +251,8 @@
     $('modalTitle').textContent = 'Update · ' + m.name;
     $('modalStatus').value = m.status;
     $('modalNote').value = m.notes || '';
+    // Default the shift to the global filter selection (if any).
+    $('modalShift').value = (window.__wfFilter && window.__wfFilter.shift) || 'day';
     $('modalMeta').textContent = `Group: ${m.group_name || '—'} · Product: ${m.product_name || '—'}`;
     $('modalOverlay').classList.add('show');
   }
@@ -285,7 +294,11 @@
 
   async function saveUpdate() {
     if (currentId == null) return;
-    const payload = { status: $('modalStatus').value, note: $('modalNote').value };
+    const payload = {
+      status: $('modalStatus').value,
+      note: $('modalNote').value,
+      shift: $('modalShift').value
+    };
     const res = await fetch('/api/machine/' + currentId + '/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -372,7 +385,11 @@
         c.checked = !!(m && m.status === 'running');
       });
     } else {
-      $('bulkModalTitle').textContent = 'Update Machines';
+      $('bulkModalTitle').textContent = 'Start Machines';
+      $('bulkStatus').value = 'running';
+      // "Start All" → pre-select every machine so the button name is truthful.
+      document.querySelectorAll('.bulk-check').forEach(c => { c.checked = true; });
+      $('bulkSelectAll').checked = true;
     }
     $('bulkModalOverlay').classList.add('show');
   }

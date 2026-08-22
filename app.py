@@ -306,9 +306,11 @@ class DailyRecord(db.Model):
     out_of_order_machine_names = db.Column(db.Text, default="")  # comma separated
 
     # Staff lists & shift
-    workers_on_leave = db.Column(db.Text, default="")  # comma separated
+    workers_on_leave = db.Column(db.Integer, default=0)  # count
+    workers_on_leave_names = db.Column(db.Text, default="")  # comma separated names
     maintenance_staff = db.Column(db.Text, default="")  # comma separated
-    loading_staff = db.Column(db.Text, default="")  # comma separated
+    loading_staff = db.Column(db.Integer, default=0)  # count
+    loading_staff_names = db.Column(db.Text, default="")  # comma separated names
     shift = db.Column(db.String(16), default="day")  # "day" or "night"
 
     updated_at = db.Column(db.DateTime, default=now_uae,
@@ -328,9 +330,11 @@ class DailyRecord(db.Model):
             "working_machine_names": self.working_machine_names,
             "out_of_order_machines": self.out_of_order_machines,
             "out_of_order_machine_names": self.out_of_order_machine_names,
-            "workers_on_leave": self.workers_on_leave,
+            "workers_on_leave": _to_int(self.workers_on_leave),
+            "workers_on_leave_names": self.workers_on_leave_names,
             "maintenance_staff": self.maintenance_staff,
-            "loading_staff": self.loading_staff,
+            "loading_staff": _to_int(self.loading_staff),
+            "loading_staff_names": self.loading_staff_names,
             "shift": self.shift,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -358,6 +362,20 @@ def _fmt_date(d):
         except ValueError:
             return d
     return d.strftime("%d/%m/%Y")
+
+
+def _to_int(v, default=0):
+    """Coerce a value to int, tolerating text columns that hold digit strings.
+
+    Some columns were historically stored as TEXT; SQLite keeps the TEXT
+    affinity so values come back as strings. This normalizes them to ints.
+    """
+    if v is None or v == "":
+        return default
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return default
 
 
 # ---------------------------------------------------------------------------
@@ -645,6 +663,21 @@ def api_summary():
             st = m.status
         by_group[gname][st] = by_group[gname].get(st, 0) + 1
 
+    # Per-product machine status breakdown (for the Dashboard product cards).
+    products = {p.id: p.name for p in Product.query.all()}
+    by_product = {}
+    for m in machines:
+        pname = products.get(m.product_id, "Unassigned")
+        by_product.setdefault(pname, {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0})
+        if historical and as_of:
+            last = (MachineLog.query.filter_by(machine_id=m.id)
+                    .filter(MachineLog.timestamp <= as_of)
+                    .order_by(MachineLog.timestamp.desc()).first())
+            st = last.status if last else "idle"
+        else:
+            st = m.status
+        by_product[pname][st] = by_product[pname].get(st, 0) + 1
+
     logs = (MachineLog.query.order_by(MachineLog.timestamp.desc()).limit(8)).all()
     machine_names = {m.id: m.name for m in machines}
     recent_logs = [l.to_dict(machine_name=machine_names.get(l.machine_id)) for l in logs]
@@ -667,6 +700,7 @@ def api_summary():
         "kpis": kpis,
         "by_status": by_status,
         "by_group": by_group,
+        "by_product": by_product,
         "recent_logs": recent_logs,
         "total": total,
     })
@@ -696,12 +730,15 @@ def api_machine_status(mid):
     if new_status not in ("running", "out_of_order", "maintenance", "idle"):
         return jsonify({"error": "Invalid status"}), 400
     note = str(data.get("note", "")).strip()
+    shift = (data.get("shift") or "").strip().lower()
+    if shift not in ("day", "night"):
+        shift = shift_of(now_uae())
     m.status = new_status
     m.notes = note or m.notes
     m.updated_by = session.get("display_name", session.get("username", "Unknown"))
     db.session.add(m)
     log = MachineLog(machine_id=m.id, status=new_status, note=note,
-                    updated_by=m.updated_by, shift=shift_of(now_uae()))
+                    updated_by=m.updated_by, shift=shift)
     db.session.add(log)
     db.session.commit()
     return jsonify({"machine": m.to_dict(), "log": log.to_dict(machine_name=m.name)})
@@ -782,6 +819,54 @@ def api_machines_bulk_stop():
     return jsonify({"updated": count})
 
 
+@app.route("/api/machines/bulk_update", methods=["POST"])
+@login_required
+def api_machines_bulk_update():
+    """Set status (and optionally shift) for a chosen set of machines at once.
+
+    The Machines page bulk modal posts here with:
+        status       - one of running|idle|maintenance|out_of_order
+        shift        - optional "day"|"night" (or "" to keep current)
+        machine_ids  - list of machine ids to update
+        update_runs  - if true and the new status is "idle", any running
+                       production runs for those machines are stopped.
+    """
+    data = request.get_json(silent=True) or {}
+    status = (data.get("status") or "").strip().lower()
+    if status not in ("running", "out_of_order", "maintenance", "idle"):
+        return jsonify({"error": "Invalid status"}), 400
+    shift = (data.get("shift") or "").strip().lower()
+    if shift and shift not in ("day", "night"):
+        return jsonify({"error": "Invalid shift"}), 400
+    machine_ids = data.get("machine_ids") or []
+    try:
+        machine_ids = [int(x) for x in machine_ids]
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid machine ids"}), 400
+    if not machine_ids:
+        return jsonify({"error": "No machines selected"}), 400
+    update_runs = bool(data.get("update_runs", False))
+    actor = session.get("display_name", session.get("username", "Unknown"))
+    now = now_uae()
+    count = 0
+    for m in Machine.query.filter(Machine.id.in_(machine_ids)).all():
+        m.status = status
+        m.updated_by = actor
+        m.updated_at = now
+        db.session.add(m)
+        db.session.add(MachineLog(
+            machine_id=m.id, status=status, note="Bulk update",
+            updated_by=actor, shift=shift or shift_of(now)))
+        if update_runs and status == "idle":
+            for r in ProductionRun.query.filter_by(machine_id=m.id, status="running").all():
+                r.status = "stopped"
+                r.stopped_at = now
+                db.session.add(r)
+        count += 1
+    db.session.commit()
+    return jsonify({"updated": count})
+
+
 # ---------------------------------------------------------------------------
 # API: groups / products / logs
 # ---------------------------------------------------------------------------
@@ -849,7 +934,8 @@ def _build_report_events():
             pass
     if date_to:
         try:
-            q = q.filter(MachineLog.timestamp <= datetime.fromisoformat(date_to))
+            end = datetime.fromisoformat(date_to)
+            q = q.filter(MachineLog.timestamp < end + timedelta(days=1))
         except ValueError:
             pass
     shift = (request.args.get("shift") or "").strip().lower()
@@ -979,7 +1065,7 @@ def upsert_record():
     int_fields = [
         "total_workforce", "metex_staff", "csk_staff", "topquality_staff",
         "bestcare_staff", "prestige_staff", "working_machines",
-        "out_of_order_machines",
+        "out_of_order_machines", "workers_on_leave", "loading_staff",
     ]
     for f in int_fields:
         if f in data:
@@ -989,7 +1075,7 @@ def upsert_record():
                 setattr(rec, f, 0)
 
     for f in ["working_machine_names", "out_of_order_machine_names",
-              "workers_on_leave", "maintenance_staff", "loading_staff"]:
+              "workers_on_leave_names", "maintenance_staff", "loading_staff_names"]:
         if f in data:
             setattr(rec, f, str(data[f]).strip())
 
@@ -1004,8 +1090,20 @@ def upsert_record():
 @app.route("/api/workforce/summary")
 @login_required
 def api_workforce_summary():
-    """Return the latest daily record with parsed staff/machine name lists."""
-    rec = DailyRecord.query.order_by(DailyRecord.record_date.desc()).first()
+    """Return the daily record for a given date + shift (defaults to latest)."""
+    date_str = request.args.get("date")
+    shift = (request.args.get("shift") or "").strip().lower()
+    shift = "night" if shift == "night" else "day"
+    q = DailyRecord.query
+    if date_str:
+        try:
+            target = date.fromisoformat(date_str)
+        except ValueError:
+            return jsonify({"error": "Invalid date format"}), 400
+        q = q.filter_by(record_date=target)
+    if shift:
+        q = q.filter_by(shift=shift)
+    rec = q.order_by(DailyRecord.record_date.desc()).first()
     if not rec:
         return jsonify({"record": None})
 
@@ -1026,9 +1124,11 @@ def api_workforce_summary():
             "out_of_order_machines": rec.out_of_order_machines,
             "working_machine_names": split(rec.working_machine_names),
             "out_of_order_machine_names": split(rec.out_of_order_machine_names),
-            "workers_on_leave": split(rec.workers_on_leave),
+            "workers_on_leave": _to_int(rec.workers_on_leave),
+            "workers_on_leave_names": split(rec.workers_on_leave_names),
             "maintenance_staff": split(rec.maintenance_staff),
-            "loading_staff": split(rec.loading_staff),
+            "loading_staff": _to_int(rec.loading_staff),
+            "loading_staff_names": split(rec.loading_staff_names),
         }
     })
 
@@ -1038,7 +1138,19 @@ def api_workforce_summary():
 def history():
     """Return recent daily records (newest first) for the history table."""
     limit = int(request.args.get("limit", 30))
-    recs = (DailyRecord.query.order_by(DailyRecord.record_date.desc()).limit(limit)).all()
+    date_str = request.args.get("date")
+    shift = (request.args.get("shift") or "").strip().lower()
+    shift = "night" if shift == "night" else "day"
+    q = DailyRecord.query
+    if date_str:
+        try:
+            target = date.fromisoformat(date_str)
+        except ValueError:
+            return jsonify({"error": "Invalid date format"}), 400
+        q = q.filter_by(record_date=target)
+    if shift:
+        q = q.filter_by(shift=shift)
+    recs = q.order_by(DailyRecord.record_date.desc()).limit(limit).all()
     return jsonify({"records": [r.to_dict() for r in recs]})
 
 
@@ -1227,9 +1339,11 @@ def _seed():
 def _ensure_columns():
     """Add any newly introduced columns to existing tables (SQLite-safe)."""
     expected = {
-        "workers_on_leave": "TEXT",
+        "workers_on_leave": "INTEGER",
+        "workers_on_leave_names": "TEXT",
         "maintenance_staff": "TEXT",
-        "loading_staff": "TEXT",
+        "loading_staff": "INTEGER",
+        "loading_staff_names": "TEXT",
         "shift": "VARCHAR(16)",
     }
     inspector = db.inspect(db.engine)
@@ -1238,6 +1352,41 @@ def _ensure_columns():
         if col not in existing:
             with db.engine.begin() as conn:
                 conn.execute(db.text(f"ALTER TABLE daily_records ADD COLUMN {col} {col_type}"))
+
+    # One-time data migration: the old schema stored comma-separated NAMES in
+    # workers_on_leave / loading_staff. Convert those into a count (int) plus a
+    # separate names column. Rows that already hold a pure number are left as-is;
+    # blank values are normalized to 0 so the Integer columns stay clean.
+    with db.engine.begin() as conn:
+        rows = conn.execute(db.text(
+            "SELECT id, workers_on_leave, loading_staff FROM daily_records"
+        )).fetchall()
+        for rid, wol, lod in rows:
+            sets, params = [], {"id": rid}
+            wol_s = str(wol).strip() if wol is not None else ""
+            if wol_s and not wol_s.isdigit():
+                names = [x.strip() for x in wol_s.split(",") if x.strip()]
+                sets.append("workers_on_leave = :wol")
+                sets.append("workers_on_leave_names = :wol_names")
+                params["wol"] = len(names)
+                params["wol_names"] = ", ".join(names)
+            elif not wol_s:
+                sets.append("workers_on_leave = :wol")
+                params["wol"] = 0
+            lod_s = str(lod).strip() if lod is not None else ""
+            if lod_s and not lod_s.isdigit():
+                names = [x.strip() for x in lod_s.split(",") if x.strip()]
+                sets.append("loading_staff = :lod")
+                sets.append("loading_staff_names = :lod_names")
+                params["lod"] = len(names)
+                params["lod_names"] = ", ".join(names)
+            elif not lod_s:
+                sets.append("loading_staff = :lod")
+                params["lod"] = 0
+            if sets:
+                conn.execute(db.text(
+                    f"UPDATE daily_records SET {', '.join(sets)} WHERE id = :id"
+                ), params)
 
     # New user columns (permissions + is_active) + backfill for existing users.
     existing_u = {c["name"] for c in inspector.get_columns("users")}
@@ -1301,8 +1450,10 @@ def _migrate_db():
             "topquality_staff INTEGER, bestcare_staff INTEGER, prestige_staff INTEGER, "
             "working_machines INTEGER, working_machine_names TEXT, "
             "out_of_order_machines INTEGER, out_of_order_machine_names TEXT, "
-            "updated_at DATETIME, workers_on_leave TEXT, "
-            "maintenance_staff TEXT, loading_staff TEXT, shift VARCHAR(16), "
+            "updated_at DATETIME, workers_on_leave INTEGER, "
+            "workers_on_leave_names TEXT, "
+            "maintenance_staff TEXT, loading_staff INTEGER, "
+            "loading_staff_names TEXT, shift VARCHAR(16), "
             "UNIQUE (record_date, shift))"
         ))
         col_list = ", ".join(cols)
@@ -1378,6 +1529,9 @@ def api_run_start():
         db.session.add(open_run)
     product_id = data.get("product_id") or None
     group_id = data.get("group_id") or m.group_id
+    shift = (data.get("shift") or "").strip().lower()
+    if shift not in ("day", "night"):
+        shift = shift_of(now_uae())
     run = ProductionRun(
         machine_id=machine_id,
         product_id=product_id,
@@ -1387,6 +1541,7 @@ def api_run_start():
         operator=session.get("display_name", session.get("username", "Unknown")),
         note=str(data.get("note") or "").strip(),
         status="running",
+        shift=shift,
     )
     db.session.add(run)
     m.status = "running"
@@ -1394,7 +1549,7 @@ def api_run_start():
     db.session.add(m)
     db.session.add(MachineLog(machine_id=m.id, status="running",
                               note="Run started" + (f" ({run.item_name})" if run.item_name else ""),
-                              updated_by=run.operator, shift=shift_of(run.started_at)))
+                              updated_by=run.operator, shift=shift))
     db.session.commit()
     return jsonify({"run": run.to_dict(machine_name=m.name)}), 201
 
@@ -1407,6 +1562,9 @@ def api_run_stop(rid):
         run.status = "stopped"
         run.stopped_at = now_uae()
         payload = request.get_json(silent=True) or {}
+        shift = (payload.get("shift") or "").strip().lower()
+        if shift not in ("day", "night"):
+            shift = shift_of(run.stopped_at)
         if payload.get("note"):
             run.note = str(payload["note"]).strip()
         db.session.add(run)
@@ -1417,7 +1575,7 @@ def api_run_stop(rid):
             db.session.add(m)
             db.session.add(MachineLog(machine_id=m.id, status="idle",
                                       note=f"Run stopped ({_fmt_duration(run.run_seconds())})",
-                                      updated_by=m.updated_by, shift=shift_of(run.stopped_at)))
+                                      updated_by=m.updated_by, shift=shift))
         db.session.commit()
     return jsonify({"run": run.to_dict()})
 
@@ -1460,10 +1618,30 @@ def api_runs_export():
     return resp
 
 
+def _lan_ip():
+    """Best-effort detection of this machine's LAN IPv4 for LAN access hints."""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+    finally:
+        s.close()
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         _ensure_columns()
         _seed()
         _migrate_db()
+    lan = _lan_ip()
+    print("\n" + "=" * 60)
+    print("Workforce Dashboard is running.")
+    print(f"  This PC (localhost):  http://127.0.0.1:{PORT}")
+    print(f"  Other PCs / phones on same Wi-Fi:  http://{lan}:{PORT}")
+    print("  (Make sure Windows Firewall allows Python on port", PORT, ")")
+    print("=" * 60 + "\n")
     app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
