@@ -17,7 +17,6 @@ instance/
 
 # Node / frontend
 node_modules/
-static/tailwind.css
 
 # Logs & temp
 *.log
