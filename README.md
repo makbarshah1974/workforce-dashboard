@@ -106,10 +106,61 @@ without touching your router or buying a domain, use a Cloudflare Tunnel.
 - All viewers share the same database (`workforce.db` on this PC), so edits
   appear live for everyone.
 
-## Deploying to the cloud (later, when final)
+## Deploying to the cloud (free, 24/7 — no PC needed)
 
-When the app is final, it can be deployed to a free host (e.g. Render.com) for a
-permanent address. That step is deferred until the project is ready.
+This app has a Python/PostgreSQL backend, so free **static** hosts (Netlify,
+GitHub Pages) cannot run it. The recommended free, always-online host is
+**Render** (web service) + **Neon** (PostgreSQL). No code changes are required —
+the repo already ships `wsgi.py`, `Procfile`, and `render.yaml` for this.
+
+> **Why not Netlify?** Netlify's free tier runs only static files/Jamstack.
+> Its build (`npm run build`) only compiles Tailwind CSS and produces no `dist/`
+> folder, so it fails with *"Deploy directory 'dist' does not exist"* — and even
+> if it built, there would be no Flask backend, database, or login. Use the
+> `netlify.toml` here only if you want a cosmetic static preview; the real app
+> lives on Render.
+
+### One-time setup (~10 minutes)
+
+1. **Push this repo to GitHub** (a remote `origin` already points at your repo).
+2. **Create a free Neon database** — https://neon.tech (no credit card).
+   Create a project and copy its **connection string**:
+   `postgresql://USER:PASSWORD@HOST:5432/neondb` (populate the password field).
+3. **Generate a secret key** (any machine with Python):
+   `python -c "import secrets; print(secrets.token_hex(48))"`
+4. **Create the service on Render** — https://render.com (free, no credit card):
+   - New → **Blueprint** → connect your GitHub repo.
+   - Render reads `render.yaml` and offers `workforce-dashboard` (Python, free).
+   - When it asks for env vars, paste:
+     - `DATABASE_URL` = the **Neon** connection string from step 2
+     - `SECRET_KEY` = your generated secret from step 3
+     - `DASHBOARD_PASSWORD` = choose a strong admin password
+   - Create → Deploy.
+5. When the build finishes, Render shows your permanent URL:
+   `https://workforce-dashboard-XXXX.onrender.com`
+
+Share that URL with your users. They log in with the `DASHBOARD_PASSWORD`
+(admin) or the seeded `supervisor`/`operator` users, and every edit is stored
+in the cloud database — reachable from any PC or phone, any time, even when
+your own computer is off. Tables and default data are created automatically on
+first start (see `wsgi.init_db()`).
+
+**Note:** Render's free tier sleeps the service after ~15 minutes of inactivity
+and wakes it on the next visit (a few seconds delay). That is normal and free.
+
+### Updating the live app later
+
+Push changes to GitHub and the Render service auto-deploys. To redeploy without
+a code change, use the **Manual Deploy → Deploy** button in Render.
+
+### Production environment variables
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Neon/PostgreSQL connection string (production) |
+| `SECRET_KEY` | Long random string; signs login session cookies |
+| `DASHBOARD_PASSWORD` | Password stored for the seeded `admin` user |
+| `PORT` | Render sets `10000` automatically (`Procfile` binds `$PORT`) |
 
 ## Project structure
 ```

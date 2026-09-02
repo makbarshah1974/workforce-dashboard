@@ -1,5 +1,6 @@
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
+gunicorn==23.0.0
 # PostgreSQL driver. Use ONE of the following:
 #   - psycopg (v3) is recommended and ships prebuilt wheels (no pg_config needed):
 psycopg[binary]==3.3.4

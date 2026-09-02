@@ -1,0 +1,27 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTE: Netlify is a STATIC host. It cannot run this app's Python/Flask
+# backend, PostgreSQL, or the /api/* endpoints.
+#
+# The real, always-online deployment of this dashboard is done on **Render**
+# (free) — see render.yaml + README.md. This netlify.toml only matters if you
+# still open this repo in a Netlify site: it publishes the static prototype
+# (index.html + dashboard.css) so the build stops failing with
+# "Deploy directory 'dist' does not exist".
+#
+# If a Netlify deploy is NOT needed, simply delete this file (and the Netlify
+# site) and use the rendered "https://<app>.onrender.com" URL instead.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  # No front-end build needed — the prototype is plain HTML/CSS at the repo root.
+  command = "true"
+  publish = "."
+
+# The Flask app also ships a /login page; this keeps deep links sane on the
+# static preview. (The authoritative `/login`, `/dashboard`, `/api/...` routes
+# only exist on the Render deployment.)
+[[redirects]]
+  from = "/api/*"
+  to = "https://<app>.onrender.com/api/:splat"
+  status = 200
+  force = false

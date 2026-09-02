@@ -1,0 +1,41 @@
+# Render Blueprint — creates the Flask web service with one click.
+#
+# How to use:
+#   1. Create a FREE Neon PostgreSQL database (neon.tech) and copy its
+#      "postgresql://..." connection string.
+#   2. Push this repo to GitHub.
+#   3. In Render: New -> Blueprint -> connect the repo.
+#      Render reads this file and offers to create the service below.
+#   4. During creation paste the env var values (see the `envVars` list).
+#      After creation add / confirm the same env vars under
+#      Dashboard -> your service -> Environment.
+#   5. Deploy. Your site is live permanently.
+#
+# Security: the "secretKey" and "dashboardPassword" values here are default
+# placeholders. OVERRIDE them in Render's dashboard with strong values.
+services:
+  - type: web
+    name: workforce-dashboard
+    runtime: python
+    plan: free
+    rootDir: ./
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      python -c "from wsgi import init_db; init_db()" &&
+      gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      # URL of the free Neon PostgreSQL database (paste from Neon).
+      - key: DATABASE_URL
+        sync: false
+      # Long random string used to sign login session cookies. Generate with:
+      #   python -c "import secrets; print(secrets.token_hex(48))"
+      - key: SECRET_KEY
+        value: change-me-to-a-long-random-secret
+      # Password used to seed the "admin" user on first run (change this!).
+      - key: DASHBOARD_PASSWORD
+        value: change-me-strong-password
+      # Render exposes its PORT automatically; set the app's expected port.
+      - key: PORT
+        value: 10000
