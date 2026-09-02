@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% set active = 'audit' %}
+{% block title %}Audit Trail · Monitoring System{% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+
+{% block content %}
+  <div class="toolbar">
+    <div class="filters">
+      <label class="inline">From <input type="date" id="fromDate" /></label>
+      <label class="inline">To <input type="date" id="toDate" /></label>
+      <select id="actionFilter">
+        <option value="">All actions</option>
+      </select>
+      <input type="search" id="userBox" placeholder="Filter by user…" />
+      <input type="search" id="searchBox" placeholder="Search description…" />
+      <button class="btn" id="applyBtn">Apply</button>
+      <a class="btn secondary" id="exportBtn" href="/api/audit-logs/export">Export CSV</a>
+    </div>
+  </div>
+
+  <div class="grid grid-4" id="auditKpis"></div>
+
+  <div class="section-title">User Activity</div>
+  <div class="table-wrap">
+    <table id="auditTable">
+      <thead>
+        <tr><th>Time</th><th>User</th><th>Action</th><th>Target</th><th>Description</th><th>IP</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const p = (n) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, (c) => (
+      {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]
+    ));
+  }
+
+  // Action badge styling (reuses the user-management badge classes).
+  const ACTION_BADGE = {
+    login: 'badge-on', logout: 'badge-off',
+    user_create: 'badge-sup', user_update: 'badge-sup', user_delete: 'badge-admin',
+  };
+
+  function params() {
+    const p = new URLSearchParams();
+    const from = $('fromDate').value;
+    const to = $('toDate').value;
+    const a = $('actionFilter').value;
+    const u = $('userBox').value.trim();
+    const q = $('searchBox').value.trim();
+    if (from) p.set('date_from', from);
+    if (to) p.set('date_to', to);
+    if (a) p.set('action', a);
+    if (u) p.set('user', u);
+    if (q) p.set('search', q);
+    return p.toString();
+  }
+
+  async function loadAudit() {
+    const res = await fetch('/api/audit-logs?' + params());
+    const data = await res.json();
+    const logs = data.logs || [];
+    const actionLabels = data.actions || {};
+    const distinctUsers = new Set(logs.map((l) => l.actor)).size;
+    const logins = logs.filter((l) => l.action === 'login').length;
+    const kpis = [
+      { label: 'Total Events', value: data.count || 0, cls: 'accent' },
+      { label: 'Distinct Users', value: distinctUsers, cls: 'c1' },
+      { label: 'Logins', value: logins, cls: 'c2' },
+      { label: 'Other Actions', value: (data.count || 0) - logins, cls: 'c3' },
+    ];
+    $('auditKpis').innerHTML = kpis.map((k) =>
+      `<div class="card ${k.cls}"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`
+    ).join('');
+
+    $('auditTable').querySelector('tbody').innerHTML = logs.length
+      ? logs.map((l) => {
+          const target = l.entity_type
+            ? `${escapeHtml(l.entity_type)}${l.entity_id != null ? ' #' + l.entity_id : ''}`
+            : '—';
+          const label = actionLabels[l.action] || l.action;
+          const badge = ACTION_BADGE[l.action] || '';
+          return `<tr>
+            <td>${fmtTime(l.timestamp)}</td>
+            <td>${escapeHtml(l.actor || '—')}</td>
+            <td><span class="badge ${badge}">${escapeHtml(label)}</span></td>
+            <td>${target}</td>
+            <td>${escapeHtml(l.description || '')}</td>
+            <td>${escapeHtml(l.ip_address || '—')}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="6" class="empty">No activity found</td></tr>`;
+
+    $('exportBtn').href = '/api/audit-logs/export?' + params();
+  }
+
+  // Deep-link support: ?user=NAME (e.g. from the Users page "Activity" button).
+  const prefill = new URLSearchParams(location.search).get('user');
+  if (prefill) $('userBox').value = prefill;
+
+  // Populate the action dropdown from the server's action catalogue.
+  fetch('/api/audit-logs').then((r) => r.json()).then((d) => {
+    const sel = $('actionFilter');
+    const acts = d.actions || {};
+    Object.entries(acts).forEach(([k, v]) => {
+      const o = document.createElement('option');
+      o.value = k;
+      o.textContent = v;
+      sel.appendChild(o);
+    });
+  });
+
+  $('applyBtn').addEventListener('click', loadAudit);
+  ['userBox', 'searchBox'].forEach((id) =>
+    $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') loadAudit(); })
+  );
+  loadAudit();
+</script>
+{% endblock %}

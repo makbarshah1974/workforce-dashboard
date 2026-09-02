@@ -1,0 +1,298 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 6 0 R 7 0 R 8 0 R 9 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 11 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 13 0 R >>
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+10 0 obj
+<< /Length 5260 >>
+stream
+BT /F2 18.00 Tf 1 0 0 1 85.96 785.89 Tm (Workforce & Machine Live Monitoring System) Tj ET
+BT /F1 12.00 Tf 1 0 0 1 200.92 763.89 Tm (User Manual and Operating Guide) Tj ET
+0.60 0.60 0.60 RG 0.70 w 56.00 747.89 m 539.28 747.89 l S
+BT /F1 10.00 Tf 1 0 0 1 56.00 735.89 Tm (This manual explains how to install, log in to, and operate the Workforce & Machine Live) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 722.39 Tm (Monitoring System: a web-based, password-protected dashboard for tracking daily workforce) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 708.89 Tm (numbers and machine status across your plant.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 695.39 Tm (It is intended for everyday users \(operators, supervisors and managers\) as well as) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 681.89 Tm (administrators who manage accounts and access. No programming knowledge is required to use) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 668.39 Tm (the system.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 654.89 Tm (1. Overview) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 636.89 Tm (The system is a single web application that several people can use at the same time. Each) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 623.39 Tm (person signs in with their own username and password. Whatever one user records \(a workforce) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 609.89 Tm (count, a machine status, or a production run\) is saved to a shared database and appears live) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 596.39 Tm (for everyone else.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 582.89 Tm (Key features) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 567.89 Tm (- Live dashboard that automatically refreshes \(every 15 seconds\) so the numbers are always) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 554.39 Tm (  current.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 540.89 Tm (- Daily workforce records: total workforce plus the Metex, CSK, TopQuality, BestCare and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 527.39 Tm (  Prestige teams, staff on leave, and loading staff.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 513.89 Tm (- Machine status tracking: Running, Break Down, Maintenance and Idle, with running and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 500.39 Tm (  out-of-order machine counts and names.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 486.89 Tm (- An easy update form to create or edit any date and shift.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 473.39 Tm (- Workforce history that shows the current month by default, with a month picker to review) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 459.89 Tm (  past or future months.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 446.39 Tm (- A Production Run Console to start and stop production runs and to start or stop many) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 432.89 Tm (  machines at once \(bulk actions\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 419.39 Tm (- Management pages for machines, product groups, products, reports and users, plus a) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 405.89 Tm (  machine time-summary page for administrators.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 392.39 Tm (- Responsive design that works on desktop, tablet and mobile.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 378.89 Tm (2. System Requirements) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 360.89 Tm (- Python 3.9 or newer.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 347.39 Tm (- A modern web browser \(Chrome, Edge, Firefox, Safari\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 333.89 Tm (- For production: a PostgreSQL database. For quick local testing, no extra database is) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 320.39 Tm (  needed \(SQLite is used automatically\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 306.89 Tm (- Optional, for sharing over the internet: the Cloudflare Tunnel client \(cloudflared\).) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 293.39 Tm (3. Installation and Setup) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 275.39 Tm (Follow these steps once, on the computer that will host the system.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 261.89 Tm (Step 1 - Install dependencies) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 246.89 Tm (Open a terminal in the project folder and run:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 233.39 Tm (pip install -r requirements.txt) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 219.89 Tm (Step 2 - Configure the environment) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 204.89 Tm (Copy the example configuration and then edit the new .env file:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 191.39 Tm (cp .env.example .env) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 177.89 Tm (Set at least these three values in .env:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 164.39 Tm (- DATABASE_URL - your database connection string. For PostgreSQL use something like) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 150.89 Tm (  postgresql://postgres:PASSWORD@localhost:5432/workforce. For a quick local test use) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 137.39 Tm (  sqlite:///workforce.db.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 123.89 Tm (- DASHBOARD_PASSWORD - the password users type to sign in.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 110.39 Tm (- SECRET_KEY - a long random string used to keep login sessions secure.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 96.89 Tm (Step 3 - Start the application) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 81.89 Tm (Run the application with:) Tj ET
+BT /F1 9 Tf 1 0 0 1 269.04 30 Tm (Page 1 of 5) Tj ET
+
+endstream
+endobj
+11 0 obj
+<< /Length 5174 >>
+stream
+BT /F1 10.00 Tf 1 0 0 1 56.00 785.89 Tm (python app.py) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 772.39 Tm (Step 4 - Open it in a browser) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 757.39 Tm (Visit http://localhost:5000 . On first start the app creates the database tables and seeds) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 743.89 Tm (default users and sample data.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 730.39 Tm (4. Logging In) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 712.39 Tm (Open the application URL. You see a login screen with three fields:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 698.89 Tm (- Role - choose the role your account was created with.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 685.39 Tm (- Username - your account username.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 671.89 Tm (- Password - your account password.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 658.39 Tm (The role you select must match the role of the account, otherwise you will see an error.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 644.89 Tm (After a successful login you are taken to your dashboard.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 631.39 Tm (Default accounts) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 616.39 Tm (When the database is empty, the system creates these starter accounts \(change their) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 602.89 Tm (passwords after first login\):) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 589.39 Tm (- admin / admin123  \(Administrator\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 575.89 Tm (- supervisor / super123  \(Supervisor\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 562.39 Tm (- operator / oper123  \(Operator\)) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 548.89 Tm (Signing out) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 533.89 Tm (Use the user menu in the top corner to log out. Always log out on shared computers.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 520.39 Tm (5. Roles and Page Access) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 502.39 Tm (Not every user can see every page. Each user belongs to a role and has a list of pages they) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 488.89 Tm (are allowed to open. This is enforced on the server, so even typing a page address directly) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 475.39 Tm (will show a Forbidden \(403\) message if the user has no access.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 461.89 Tm (Available roles) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 446.89 Tm (- Administrator - full access to every page and settings.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 433.39 Tm (- General Manager, Operation Manager, Production Manager - all pages by default; an admin) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 419.89 Tm (  can narrow their access.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 406.39 Tm (- Supervisor - dashboard, machines, products, groups, reports, run console, workforce and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 392.89 Tm (  production runs.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 379.39 Tm (- Operator - dashboard, machines, run console and production runs.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 365.89 Tm (- Viewer - read-only: dashboard, machines, products, groups, reports, workforce and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 352.39 Tm (  production runs.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 338.89 Tm (How access appears in the interface) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 323.89 Tm (The left navigation sidebar only shows the pages a user is allowed to open. User Management) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 310.39 Tm (is visible only to administrators. If a page is missing for you, ask an administrator to) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 296.89 Tm (grant access.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 283.39 Tm (6. Navigating the Interface) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 265.39 Tm (Sidebar navigation) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 250.39 Tm (The sidebar lists the pages you can access. On a phone it becomes a slide-out drawer that) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 236.89 Tm (you open with a menu button.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 223.39 Tm (Global date and shift filters) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 208.39 Tm (The top of the page has Date and Shift \(Day / Night\) filters. These apply to the pages that) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 194.89 Tm (use them, such as the dashboard and the workforce board, so you can focus on a specific day) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 181.39 Tm (and shift. A 'Today' control jumps the date back to the current day.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 167.89 Tm (Live updates) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 152.89 Tm (The dashboard refreshes itself automatically every 15 seconds. Most other pages also) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 139.39 Tm (re-fetch their data after you make a change, and many have a Refresh button.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 125.89 Tm (7. Page-by-Page Guide) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 107.89 Tm (Dashboard \(home\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 92.89 Tm (The landing page shows live key indicators such as running and out-of-order machine counts,) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 79.39 Tm (recent records and summary widgets. It updates on its own every 15 seconds.) Tj ET
+BT /F1 9 Tf 1 0 0 1 269.04 30 Tm (Page 2 of 5) Tj ET
+
+endstream
+endobj
+12 0 obj
+<< /Length 5687 >>
+stream
+BT /F2 11.50 Tf 1 0 0 1 56.00 785.89 Tm (Machines) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 770.89 Tm (View, add, edit and remove machines. For each machine you can set its status \(Running, Break) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 757.39 Tm (Down, Maintenance or Idle\) and link it to a group and product.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 743.89 Tm (Groups and Products) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 728.89 Tm (Groups organize your products. Use the Groups page to manage product groups and the Products) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 715.39 Tm (page to manage the products inside them. These are used when starting a production run.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 701.89 Tm (Reports) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 686.89 Tm (Shows the history of machine status changes \(who changed what and when\), with filters for) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 673.39 Tm (date range, machine and status. Results can be exported.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 659.89 Tm (Run Console \(Production Run Console\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 644.89 Tm (This is where production runs are started and stopped:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 631.39 Tm (- Start a Production Run: choose a machine, a product group, a product, and optionally an) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 617.89 Tm (  item name, item code and note, then click Start Run.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 604.39 Tm (- Live Runs: currently running productions appear in a grid with a Stop control.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 590.89 Tm (- Recent Runs: a table of past and current runs with their status and run time.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 577.39 Tm (- Bulk Machine Actions: the 'Start All Machines' and 'Stop All Machines' buttons open a) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 563.89 Tm (  single form where you pick the new status and shift and choose which machines \(via) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 550.39 Tm (  checkboxes\), then submit. These buttons are visible to anyone who can open the Run) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 536.89 Tm (  Console page.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 523.39 Tm (Workforce Board) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 508.39 Tm (Used to record and review daily workforce numbers.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 494.89 Tm (- KPI cards show Total Workforce, Metex, CSK, TopQuality, BestCare, Prestige, Staff On) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 481.39 Tm (  Leave and Loading Staff. Click a card to see its breakdown.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 467.89 Tm (- Update Workforce: pick a Date and Shift \(Day or Night\), enter the counts \(including) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 454.39 Tm (  staff-on-leave count and names, and loading staff count and names\), then Save.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 440.89 Tm (- Workforce History: shows the current month by default. Use the Month picker to switch) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 427.39 Tm (  months and the shift toggle to filter Day or Night. Records are listed newest first.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 413.89 Tm (Production Runs) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 398.89 Tm (A full list of production runs with their machine, group, product, item, operator, run time,) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 385.39 Tm (machine status and run status. Use the search and filters to find specific runs.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 371.89 Tm (User Management \(administrators only\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 356.89 Tm (Create and edit user accounts: username, password \(minimum 4 characters\), display name, role) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 343.39 Tm (and active/inactive status. You can also set each user's page permissions with checkboxes.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 329.89 Tm (New users start with the default permissions for their role; administrators get every page.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 56.00 316.39 Tm (Summary \(administrators only\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 301.39 Tm (A machine-wise time summary showing how long each machine spent running, idle, in breakdown) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 287.89 Tm (and in maintenance.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 274.39 Tm (8. Recording Daily Workforce Data) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 256.39 Tm (A typical daily entry:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 242.89 Tm (- Open the Workforce Board from the sidebar.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 229.39 Tm (- Set the Date \(use 'Today' for the current day\) and choose the Shift \(Day or Night\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 215.89 Tm (- Enter the Total Workforce and the sub-team counts: Metex, CSK, TopQuality, BestCare and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 202.39 Tm (  Prestige.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 188.89 Tm (- Enter Staff On Leave \(a count and, in the separate field, the comma-separated names\) and) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 175.39 Tm (  Loading Staff \(count and names\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 161.89 Tm (- Click Save Workforce. The KPI cards update and the record appears in the history for) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 148.39 Tm (  that date and shift.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 134.89 Tm (- Review the month using the history Month picker; switch the shift toggle to see Day) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 121.39 Tm (  versus Night entries.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 107.89 Tm (9. Starting and Stopping Production Runs) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 89.89 Tm (To start a run:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 76.39 Tm (- Open the Run Console.) Tj ET
+BT /F1 9 Tf 1 0 0 1 269.04 30 Tm (Page 3 of 5) Tj ET
+
+endstream
+endobj
+13 0 obj
+<< /Length 5797 >>
+stream
+BT /F1 10.00 Tf 1 0 0 1 70.00 785.89 Tm (- Select the Machine, Product Group and Product. Add an item name, item code and note if) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 772.39 Tm (  needed.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 758.89 Tm (- Click Start Run. The run appears immediately under Live Runs.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 745.39 Tm (To stop a run, use the Stop control on its Live Run card or row. The machine's open run is) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 731.89 Tm (closed automatically.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 718.39 Tm (To act on many machines at once, use Start All Machines or Stop All Machines, choose the) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 704.89 Tm (machines in the modal, set the status and shift, and submit. Production runs are kept in) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 691.39 Tm (sync with the new machine status.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 677.89 Tm (10. Managing Users and Permissions) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 659.89 Tm (Administrators manage who can use the system:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 646.39 Tm (- Open User Management \(visible only to admins\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 632.89 Tm (- Add a user with a username, password, display name, role and active flag.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 619.39 Tm (- Set page permissions with the checkboxes. The role's default pages are filled in) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 605.89 Tm (  automatically; you can allow or restrict individual pages.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 592.39 Tm (- Disable a user \(set inactive\) to block sign-in without deleting their history.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 578.89 Tm (11. Remote Access \(Sharing Over the Internet\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 560.89 Tm (The app listens on port 5000 on all network interfaces, so other computers on the same) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 547.39 Tm (network can reach it directly. To share it with people anywhere without changing routers,) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 533.89 Tm (use a Cloudflare Tunnel:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 520.39 Tm (- Start the server \(python app.py\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 506.89 Tm (- In a second terminal run: cloudflared tunnel --url http://localhost:5000) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 493.39 Tm (- Cloudflared prints a public HTTPS address. Share that link and the DASHBOARD_PASSWORD) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 479.89 Tm (  with your users.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 466.39 Tm (The random address changes each time you restart the tunnel; create a named tunnel \(free) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 452.89 Tm (Cloudflare account\) for a fixed address. Your computer must stay on for the link to work.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 439.39 Tm (12. Security Notes) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 421.39 Tm (- Never set DEBUG=True when the app is reachable from the internet; the debug console) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 407.89 Tm (  allows remote code execution.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 394.39 Tm (- Use a strong DASHBOARD_PASSWORD and a random SECRET_KEY in .env.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 380.89 Tm (- Control who can do what through roles and per-page permissions.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 367.39 Tm (- All users share one database, so recorded data is visible to everyone who has access to) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 353.89 Tm (  the relevant page.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 340.39 Tm (13. Troubleshooting and FAQ) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 322.39 Tm (- I cannot log in: check that the username and password are correct and that the selected) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 308.89 Tm (  Role matches the account. Also confirm the account is active.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 295.39 Tm (- A page shows Forbidden \(403\): your account does not have permission for that page. Ask) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 281.89 Tm (  an administrator to grant it.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 268.39 Tm (- My change is not showing: wait a few seconds for the automatic refresh, or press the) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 254.89 Tm (  Refresh button on the page.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 241.39 Tm (- Where is the data stored: in the database configured by DATABASE_URL \(PostgreSQL for) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 227.89 Tm (  production, or the local workforce.db SQLite file for testing\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 214.39 Tm (- I forgot the admin password: an administrator can reset it through User Management, or) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 200.89 Tm (  it can be reset directly in the database.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 187.39 Tm (14. How It Works \(Technical Summary\)) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 169.39 Tm (For readers who want a high-level understanding of the system:) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 155.89 Tm (- Backend: a Flask application \(app.py\) handles login, the web pages and a REST API under) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 142.39 Tm (  /api/*.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 128.89 Tm (- Database: SQLAlchemy models store Users, Machines, Groups, Products, DailyRecords) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 115.39 Tm (  \(workforce snapshots\), ProductionRuns and MachineLogs \(status-change history\).) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 101.89 Tm (- Front end: server-rendered HTML templates with vanilla JavaScript and CSS; no heavy) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 88.39 Tm (  frameworks are required in the browser.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 74.89 Tm (- Authentication: session-based login; each request checks the user's role and page) Tj ET
+BT /F1 9 Tf 1 0 0 1 269.04 30 Tm (Page 4 of 5) Tj ET
+
+endstream
+endobj
+14 0 obj
+<< /Length 800 >>
+stream
+BT /F1 10.00 Tf 1 0 0 1 70.00 785.89 Tm (  permissions before showing a page or returning API data.) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 772.39 Tm (- Live behaviour: the browser periodically re-fetches data \(the dashboard every 15) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 758.89 Tm (  seconds\) and refreshes after each action, so all viewers see the same up-to-date) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 70.00 745.39 Tm (  information.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 56.00 731.89 Tm (15. Getting Help) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 713.89 Tm (If something is unclear or not working, check the Troubleshooting section above first. For) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 56.00 700.39 Tm (account or access issues, contact your system administrator.) Tj ET
+BT /F1 9 Tf 1 0 0 1 269.04 30 Tm (Page 5 of 5) Tj ET
+
+endstream
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000139 00000 n 
+0000000209 00000 n 
+0000000284 00000 n 
+0000000427 00000 n 
+0000000570 00000 n 
+0000000713 00000 n 
+0000000856 00000 n 
+0000000999 00000 n 
+0000006312 00000 n 
+0000011539 00000 n 
+0000017279 00000 n 
+0000023129 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+23981
+%%EOF

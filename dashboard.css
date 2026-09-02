@@ -311,7 +311,7 @@ a { color: var(--accent); text-decoration: none; }
 }
 .data-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0.85rem; }
 .data-table th, .data-table td {
-  text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border-soft);
+  text-align: center; padding: 12px 16px; border-bottom: 1px solid var(--border-soft);
   white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 .data-table th {

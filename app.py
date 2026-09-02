@@ -30,6 +30,8 @@ from flask import (
     url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -216,16 +218,50 @@ class MachineLog(db.Model):
     timestamp = db.Column(db.DateTime, default=now_uae)
     shift = db.Column(db.String(16), default="day")  # "day" or "night"
 
-    def to_dict(self, machine_name=None):
+    def to_dict(self, machine_name=None, product_name=None):
         return {
             "id": self.id,
             "machine_id": self.machine_id,
             "machine_name": machine_name,
+            "product_name": product_name,
             "status": self.status,
             "note": self.note,
             "updated_by": self.updated_by,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "shift": self.shift,
+        }
+
+
+class UserAuditLog(db.Model):
+    """General user-activity audit trail (login/logout, user management, and
+    key data changes). Complements MachineLog, which only tracks machine
+    status changes. This table answers 'what did a given user do, and when?'."""
+
+    __tablename__ = "user_audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    actor = db.Column(db.String(120), default="Unknown")  # denormalized name
+    action = db.Column(db.String(40), default="")         # login|logout|user_create|...
+    entity_type = db.Column(db.String(32), nullable=True)  # user|machine|run|record
+    entity_id = db.Column(db.Integer, nullable=True)
+    description = db.Column(db.Text, default="")
+    ip_address = db.Column(db.String(45), nullable=True)
+    meta = db.Column(db.Text, nullable=True)              # JSON, optional extras
+    timestamp = db.Column(db.DateTime, default=now_uae, index=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "actor": self.actor,
+            "action": self.action,
+            "entity_type": self.entity_type,
+            "entity_id": self.entity_id,
+            "description": self.description,
+            "ip_address": self.ip_address,
+            "meta": json.loads(self.meta) if self.meta else None,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
         }
 
 
@@ -403,6 +439,111 @@ def login_required(view):
     return wrapper
 
 
+def current_actor():
+    """Best-effort display name of the acting user for the audit trail."""
+    u = current_user()
+    if isinstance(u, dict):
+        return u.get("display_name") or u.get("username") or "admin"
+    if u is not None:
+        return u.display_name or u.username
+    return session.get("display_name") or session.get("username") or "Unknown"
+
+
+def audit_log(action, entity_type=None, entity_id=None, description="",
+              actor=None, ip=None, meta=None, commit=False):
+    """Record a user-activity event.
+
+    Best-effort: any failure is swallowed (and the partial add rolled back)
+    so auditing can never break the caller's operation. When `commit` is
+    False the entry is added to the current session and committed by the
+    caller (use this inside endpoints that already commit their changes).
+    """
+    try:
+        if actor is None:
+            actor = current_actor()
+        if ip is None:
+            try:
+                ip = request.remote_addr
+            except Exception:
+                ip = None
+        meta_str = None
+        if meta is not None:
+            try:
+                meta_str = json.dumps(meta)
+            except (TypeError, ValueError):
+                meta_str = None
+        u = current_user()
+        user_id = u.id if isinstance(u, User) else None
+        db.session.add(UserAuditLog(
+            user_id=user_id,
+            actor=actor or "Unknown",
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            description=str(description or ""),
+            ip_address=ip,
+            meta=meta_str,
+        ))
+        if commit:
+            db.session.commit()
+    except Exception as exc:  # pragma: no cover - auditing must never crash
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        try:
+            app.logger.warning("audit_log failed for action %s: %s", action, exc)
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# Global error handling: rollback the session on any DB/commit failure and
+# return a clean JSON error for API routes (instead of a raw 500 page).
+# ---------------------------------------------------------------------------
+def _is_api_request():
+    return request.path.startswith("/api/")
+
+
+@app.errorhandler(SQLAlchemyError)
+def _handle_sqlalchemy_error(exc):
+    db.session.rollback()
+    if _is_api_request():
+        msg = getattr(exc, "orig", None)
+        detail = str(msg) if msg else str(exc)
+        return jsonify({"error": "Database error", "detail": detail}), 400
+    return jsonify({"error": "Database error"}), 500
+
+
+@app.errorhandler(Exception)
+def _handle_unexpected_error(exc):
+    # HTTP exceptions (e.g. 404 from get_or_404) are intentional responses —
+    # let Flask render them as-is instead of converting them to 500.
+    if isinstance(exc, HTTPException):
+        return exc
+    # Don't double-handle SQLAlchemy errors (handled above).
+    if isinstance(exc, SQLAlchemyError):
+        return _handle_sqlalchemy_error(exc)
+    db.session.rollback()
+    if _is_api_request():
+        return jsonify({"error": "Unexpected error", "detail": str(exc)}), 500
+    return jsonify({"error": "Unexpected error"}), 500
+
+
+@app.errorhandler(403)
+def _handle_403(exc):
+    # API callers get a clean JSON 403.
+    if _is_api_request():
+        return jsonify({"error": "Forbidden"}), 403
+    # Page access denied: silently send the user to the first page they ARE
+    # allowed to view instead of showing an error (non-concerned users never
+    # see pages they don't have permission for).
+    for key in [k for k, _ in PAGE_KEYS]:
+        if user_can(key):
+            return redirect(url_for(PAGE_ROUTES[key]))
+    return redirect(url_for("dashboard"))
+
+
 # ---------------------------------------------------------------------------
 # Access control: per-page permissions + admin helpers
 # ---------------------------------------------------------------------------
@@ -416,6 +557,8 @@ PAGE_KEYS = [
     ("workforce", "Workforce"),
     ("runs", "Production Runs"),
     ("users", "User Management"),
+    ("audit", "Audit Trail"),
+    ("summary", "Summary"),
 ]
 
 # Map each page key to its Flask route endpoint (used to land users on the
@@ -430,11 +573,16 @@ PAGE_ROUTES = {
     "workforce": "workforce_page",
     "runs": "runs_page",
     "users": "users_page",
+    "audit": "audit_page",
+    "summary": "summary_page",
 }
 
 # Roles offered on the login screen, in display order.
 LOGIN_ROLES = [
     ("admin", "Administrator", "Full access to every tab and settings"),
+    ("general_manager", "General Manager", "All pages by default; access set by admin"),
+    ("operation_manager", "Operation Manager", "All pages by default; access set by admin"),
+    ("production_manager", "Production Manager", "All pages by default; access set by admin"),
     ("supervisor", "Supervisor", "Manage machines, products, runs & reports"),
     ("operator", "Operator", "View dashboard, machines, runs & console"),
     ("viewer", "Viewer", "Read-only monitoring access"),
@@ -442,8 +590,14 @@ LOGIN_ROLES = [
 
 
 def default_permissions(role):
-    """Default page permissions granted to a role."""
+    """Default page permissions granted to a role.
+
+    Manager roles start with access to every page; the admin then narrows
+    each individual user's access via the per-user permission toggles.
+    """
     if role == "admin":
+        return [k for k, _ in PAGE_KEYS]
+    if role in ("general_manager", "operation_manager", "production_manager"):
         return [k for k, _ in PAGE_KEYS]
     if role == "supervisor":
         return ["dashboard", "machines", "products", "groups",
@@ -452,6 +606,12 @@ def default_permissions(role):
         return ["dashboard", "machines", "products", "groups",
                 "reports", "workforce", "runs"]
     return ["dashboard", "machines", "entry", "runs"]
+
+
+# Default permissions per role, used by the client to auto-fill the
+# Page Access Control checkboxes. Derived from default_permissions() so the
+# client stays in sync whenever a page or role default changes.
+ROLE_DEFAULTS = {r: default_permissions(r) for (r, _, _) in LOGIN_ROLES}
 
 
 def is_admin(u):
@@ -501,6 +661,7 @@ def admin_required(view):
 @app.context_processor
 def inject_helpers():
     return {"user_can": user_can, "PAGE_KEYS": PAGE_KEYS,
+            "ROLE_DEFAULTS": ROLE_DEFAULTS,
             "is_admin_user": is_admin(current_user())}
 
 
@@ -528,14 +689,10 @@ def login():
                 session["username"] = user.username
                 session["display_name"] = user.display_name or user.username
                 session["role"] = user.role
+                audit_log("login", entity_type="user", entity_id=user.id,
+                          description=f"User '{user.username}' logged in",
+                          actor=user.display_name or user.username, commit=True)
                 return redirect(url_for("dashboard"))
-        # Legacy fallback: shared dashboard password (always admin role)
-        elif password == DASHBOARD_PASSWORD:
-            session["user_id"] = 0
-            session["username"] = username or "admin"
-            session["display_name"] = username or "Admin"
-            session["role"] = "admin"
-            return redirect(url_for("dashboard"))
         else:
             error = "Invalid username or password."
     return render_template("login.html", error=error, LOGIN_ROLES=LOGIN_ROLES)
@@ -543,6 +700,7 @@ def login():
 
 @app.route("/logout")
 def logout():
+    audit_log("logout", description="User logged out", commit=True)
     session.clear()
     return redirect(url_for("login"))
 
@@ -561,6 +719,15 @@ def dashboard():
             return redirect(url_for(PAGE_ROUTES[key]))
     # Authenticated but no page access at all.
     return render_template("dashboard.html", user=u, no_access=True)
+
+
+@app.route("/summary")
+@login_required
+@page_required("summary")
+def summary_page():
+    """Admin-only: machine-wise time summary (run/idle/breakdown/maintenance)
+    for a given date + shift, driven by the global filter."""
+    return render_template("summary.html", user=current_user())
 
 
 @app.route("/machines")
@@ -680,7 +847,11 @@ def api_summary():
 
     logs = (MachineLog.query.order_by(MachineLog.timestamp.desc()).limit(8)).all()
     machine_names = {m.id: m.name for m in machines}
-    recent_logs = [l.to_dict(machine_name=machine_names.get(l.machine_id)) for l in logs]
+    machine_products = {m.id: products.get(m.product_id, "Unassigned") for m in machines}
+    recent_logs = [l.to_dict(
+        machine_name=machine_names.get(l.machine_id),
+        product_name=machine_products.get(l.machine_id),
+    ) for l in logs]
 
     latest_rec = DailyRecord.query.order_by(DailyRecord.record_date.desc()).first()
     workforce_total = latest_rec.total_workforce if latest_rec else 0
@@ -707,18 +878,398 @@ def api_summary():
 
 
 # ---------------------------------------------------------------------------
+# API: summary/times (admin) — machine-wise accumulated time per status
+# ---------------------------------------------------------------------------
+def _summary_intervals(from_d, to_d, shift, now):
+    """Return a list of (start, end) datetime windows for the date range.
+
+    `shift` is applied per-day:
+        day   : 07:00–19:00
+        night : 19:00–07:00 (next day)
+        (none): whole calendar day
+    Any window extending into the future is clamped to `now`; entirely-future
+    days are skipped.
+    """
+    intervals = []
+    cur = from_d
+    while cur <= to_d:
+        if shift == "night":
+            s = datetime(cur.year, cur.month, cur.day, 19, 0, 0)
+            e = datetime(cur.year, cur.month, cur.day, 7, 0, 0) + timedelta(days=1)
+        elif shift == "day":
+            s = datetime(cur.year, cur.month, cur.day, 7, 0, 0)
+            e = datetime(cur.year, cur.month, cur.day, 19, 0, 0)
+        else:
+            s = datetime(cur.year, cur.month, cur.day, 0, 0, 0)
+            e = datetime(cur.year, cur.month, cur.day, 0, 0, 0) + timedelta(days=1)
+        if e > now:
+            e = min(e, now)
+        if s < now:  # skip days that are entirely in the future
+            intervals.append((s, e))
+        cur += timedelta(days=1)
+    return intervals
+
+
+def _accumulate_machine(m, intervals, now):
+    """Sum seconds per status for one machine across the given intervals."""
+    per = {"running": 0, "idle": 0, "out_of_order": 0, "maintenance": 0}
+    for (win_start, win_end) in intervals:
+        # Status the machine held just before the window started.
+        before = (MachineLog.query.filter_by(machine_id=m.id)
+                  .filter(MachineLog.timestamp < win_start)
+                  .order_by(MachineLog.timestamp.desc()).first())
+        start_status = before.status if before else m.status
+
+        logs = (MachineLog.query.filter_by(machine_id=m.id)
+                .filter(MachineLog.timestamp >= win_start)
+                .filter(MachineLog.timestamp <= win_end)
+                .order_by(MachineLog.timestamp.asc()).all())
+
+        # Walk the timeline, accumulating seconds per status.
+        cur_status = start_status
+        cur_time = win_start
+        for l in logs:
+            if l.timestamp > cur_time:
+                secs = int((l.timestamp - cur_time).total_seconds())
+                if cur_status in per:
+                    per[cur_status] += secs
+            cur_status = l.status
+            cur_time = l.timestamp
+        if win_end > cur_time:
+            secs = int((win_end - cur_time).total_seconds())
+            if cur_status in per:
+                per[cur_status] += secs
+    return per
+
+
+def _parse_summary_params():
+    """Parse date range / shift / machine filter from request args.
+
+    Returns (params_dict, error_string). On error error_string is set.
+    """
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    date_str = request.args.get("date")  # legacy single-day support
+    shift = (request.args.get("shift") or "").strip().lower()
+    if shift not in ("day", "night"):
+        shift = ""
+
+    if date_from:
+        try:
+            from_d = date.fromisoformat(date_from)
+        except ValueError:
+            return None, "Invalid date_from format"
+    elif date_str:
+        try:
+            from_d = date.fromisoformat(date_str)
+        except ValueError:
+            return None, "Invalid date format"
+    else:
+        from_d = date.today()
+
+    if date_to:
+        try:
+            to_d = date.fromisoformat(date_to)
+        except ValueError:
+            return None, "Invalid date_to format"
+    else:
+        to_d = from_d
+
+    if to_d < from_d:
+        from_d, to_d = to_d, from_d
+
+    # Machine filter (comma-separated ids). Empty = all machines.
+    machine_ids = []
+    raw_ids = request.args.get("machine_ids")
+    if raw_ids:
+        for part in raw_ids.split(","):
+            part = part.strip()
+            if part.isdigit():
+                machine_ids.append(int(part))
+
+    return {
+        "from_d": from_d,
+        "to_d": to_d,
+        "shift": shift,
+        "machine_ids": machine_ids,
+    }, None
+
+
+def _filtered_machines(params):
+    """Return machines for the summary, honoring the machine_ids filter."""
+    if params["machine_ids"]:
+        return (Machine.query.filter(Machine.id.in_(params["machine_ids"]))
+                .order_by(Machine.name).all())
+    return Machine.query.order_by(Machine.name).all()
+
+
+@app.route("/api/summary/times")
+@login_required
+@page_required("summary")
+def api_summary_times():
+    """Machine-wise accumulated time per status (running / idle / break down /
+    maintenance) for a given date range + shift, computed from the machine
+    status log timeline.
+
+    Query params:
+        date_from, date_to : inclusive date range (yyyy-mm-dd). Falls back to a
+                             single `date=`, then to today.
+        shift              : day | night | (empty = whole day)
+        machine_ids        : comma-separated machine ids (optional; all if empty)
+    """
+    params, err = _parse_summary_params()
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = now_uae()
+    intervals = _summary_intervals(params["from_d"], params["to_d"], params["shift"], now)
+    machines = _filtered_machines(params)
+    groups = {g.id: g.name for g in Group.query.all()}
+    products = {p.id: p.name for p in Product.query.all()}
+
+    results = []
+    totals = {"running": 0, "idle": 0, "out_of_order": 0, "maintenance": 0}
+    for m in machines:
+        per = _accumulate_machine(m, intervals, now)
+        for k in totals:
+            totals[k] += per[k]
+        results.append({
+            "machine_id": m.id,
+            "machine_name": m.name,
+            "machine_code": m.code,
+            "group_name": groups.get(m.group_id, "Unassigned"),
+            "product_name": products.get(m.product_id, "Unassigned"),
+            "running": per["running"],
+            "idle": per["idle"],
+            "out_of_order": per["out_of_order"],
+            "maintenance": per["maintenance"],
+            "total": sum(per.values()),
+        })
+
+    return jsonify({
+        "date_from": _fmt_date(params["from_d"]),
+        "date_to": _fmt_date(params["to_d"]),
+        "shift": params["shift"] or "all",
+        "intervals": [{"start": s.isoformat(), "end": e.isoformat()} for s, e in intervals],
+        "machines": results,
+        "totals": totals,
+    })
+
+
+@app.route("/api/summary/times/export")
+@login_required
+@page_required("summary")
+def api_summary_times_export():
+    """CSV export of the machine-wise time summary (same logic as the JSON
+    endpoint above)."""
+    params, err = _parse_summary_params()
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = now_uae()
+    intervals = _summary_intervals(params["from_d"], params["to_d"], params["shift"], now)
+    machines = _filtered_machines(params)
+    groups = {g.id: g.name for g in Group.query.all()}
+    products = {p.id: p.name for p in Product.query.all()}
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Machine", "Code", "Group", "Product", "Run Time (s)", "Idle Time (s)",
+                     "Break Down (s)", "Maintenance (s)", "Total (s)"])
+    for m in machines:
+        per = _accumulate_machine(m, intervals, now)
+        writer.writerow([
+            m.name, m.code, groups.get(m.group_id, "Unassigned"),
+            products.get(m.product_id, "Unassigned"),
+            per["running"], per["idle"], per["out_of_order"],
+            per["maintenance"], sum(per.values()),
+        ])
+    resp = make_response(output.getvalue())
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=time_summary.csv"
+    return resp
+
+
+@app.route("/api/summary/daywise")
+@login_required
+@admin_required
+def api_summary_daywise():
+    """Day-wise accumulated time per status (running / idle / break down /
+    maintenance) for a given date range + shift, aggregated across all
+    (filtered) machines. One row per calendar day.
+
+    Same filters as the machine-wise summary:
+        date_from, date_to : inclusive date range (yyyy-mm-dd)
+        shift              : day | night | (empty = whole day)
+        machine_ids        : comma-separated machine ids (optional; all if empty)
+    """
+    params, err = _parse_summary_params()
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = now_uae()
+    # _summary_intervals already yields one (start, end) window per day,
+    # clamped to `now`; we reuse it directly so the day boundaries match the
+    # machine-wise summary exactly.
+    intervals = _summary_intervals(params["from_d"], params["to_d"], params["shift"], now)
+    machines = _filtered_machines(params)
+
+    order = ["running", "idle", "out_of_order", "maintenance"]
+    days = []
+    grand = {k: 0 for k in order}
+    for (win_start, win_end) in intervals:
+        per = {k: 0 for k in order}
+        for m in machines:
+            mp = _accumulate_machine(m, [(win_start, win_end)], now)
+            for k in order:
+                per[k] += mp[k]
+        day_total = sum(per.values())
+        for k in order:
+            grand[k] += per[k]
+        days.append({
+            "date": _fmt_date(win_start.date()),
+            "date_iso": win_start.date().isoformat(),
+            "running": per["running"],
+            "idle": per["idle"],
+            "out_of_order": per["out_of_order"],
+            "maintenance": per["maintenance"],
+            "total": day_total,
+        })
+
+    return jsonify({
+        "date_from": _fmt_date(params["from_d"]),
+        "date_to": _fmt_date(params["to_d"]),
+        "shift": params["shift"] or "all",
+        "intervals": [{"start": s.isoformat(), "end": e.isoformat()} for s, e in intervals],
+        "days": days,
+        "totals": grand,
+    })
+
+
+@app.route("/api/summary/daywise/export")
+@login_required
+@admin_required
+def api_summary_daywise_export():
+    """CSV export of the day-wise time summary (same logic as the JSON
+    endpoint above)."""
+    params, err = _parse_summary_params()
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = now_uae()
+    intervals = _summary_intervals(params["from_d"], params["to_d"], params["shift"], now)
+    machines = _filtered_machines(params)
+    order = ["running", "idle", "out_of_order", "maintenance"]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Run Time (s)", "Idle Time (s)",
+                     "Break Down (s)", "Maintenance (s)", "Total (s)"])
+    for (win_start, win_end) in intervals:
+        per = {k: 0 for k in order}
+        for m in machines:
+            mp = _accumulate_machine(m, [(win_start, win_end)], now)
+            for k in order:
+                per[k] += mp[k]
+        writer.writerow([
+            _fmt_date(win_start.date()),
+            per["running"], per["idle"], per["out_of_order"],
+            per["maintenance"], sum(per.values()),
+        ])
+    resp = make_response(output.getvalue())
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=daywise_summary.csv"
+    return resp
+
+
+# ---------------------------------------------------------------------------
 # API: machines
 # ---------------------------------------------------------------------------
+def _statuses_as_of(as_of):
+    """Return ``{machine_id: status}`` reconstructed as of a timestamp.
+
+    Reuses the most recent MachineLog at or before ``as_of`` for each machine,
+    falling back to ``"idle"`` when no log exists yet. Mirrors the historical
+    reconstruction in ``api_summary`` so every page agrees on past state.
+    """
+    if not as_of:
+        return None
+    last_logs = (
+        MachineLog.query
+        .filter(MachineLog.timestamp <= as_of)
+        .order_by(MachineLog.machine_id, MachineLog.timestamp.desc())
+        .all()
+    )
+    status_at = {}
+    for l in last_logs:
+        status_at.setdefault(l.machine_id, l.status)
+    return status_at
+
+
+def _resolve_as_of(date_str, shift):
+    """Parse ``date`` + ``shift`` query params into an ``as_of`` datetime."""
+    if not date_str:
+        return None
+    try:
+        d = date.fromisoformat(date_str)
+    except ValueError:
+        return None
+    if shift == "night":
+        return datetime(d.year, d.month, d.day, 7, 0, 0) + timedelta(days=1)
+    return datetime(d.year, d.month, d.day, 19, 0, 0)
+
+
 @app.route("/api/machines")
 @login_required
 def api_machines():
+    as_of = _resolve_as_of(request.args.get("date"),
+                           (request.args.get("shift") or "").strip().lower())
+    status_at = _statuses_as_of(as_of) if as_of else None
     groups = {g.id: g.name for g in Group.query.all()}
     products = {p.id: p.name for p in Product.query.all()}
     machines = Machine.query.order_by(Machine.name).all()
-    return jsonify({
-        "machines": [m.to_dict(group_name=groups.get(m.group_id),
-                               product_name=products.get(m.product_id)) for m in machines]
-    })
+    result = []
+    for m in machines:
+        d = m.to_dict(group_name=groups.get(m.group_id),
+                      product_name=products.get(m.product_id))
+        if status_at is not None:
+            d["status"] = status_at.get(m.id, "idle")
+        result.append(d)
+    return jsonify({"machines": result})
+
+
+def _sync_production_run(machine, new_status, actor, shift, now, note=None):
+    """Keep ``production_runs`` consistent with a machine status change.
+
+    - Transition to ``running``: close any already-open run for the machine
+      (prevents overlapping runs, mirrors /api/run/start), then open a new
+      machine-level run so the Runs page / KPIs / Reports reflect it.
+    - Any other status (idle / out_of_order / maintenance): stop the machine's
+      currently open run, if any, so a stopped machine never leaves a run
+      "running" (which would inflate run time / distort availability).
+    """
+    open_runs = ProductionRun.query.filter_by(machine_id=machine.id, status="running").all()
+    if new_status == "running":
+        for r in open_runs:
+            r.status = "stopped"
+            r.stopped_at = now
+            db.session.add(r)
+        run = ProductionRun(
+            machine_id=machine.id,
+            product_id=machine.product_id,
+            group_id=machine.group_id,
+            operator=actor,
+            note=(note or "") if note is not None else "",
+            status="running",
+            shift=shift,
+            started_at=now,
+        )
+        db.session.add(run)
+    else:
+        for r in open_runs:
+            r.status = "stopped"
+            r.stopped_at = now
+            db.session.add(r)
 
 
 @app.route("/api/machine/<int:mid>/status", methods=["POST"])
@@ -733,6 +1284,7 @@ def api_machine_status(mid):
     shift = (data.get("shift") or "").strip().lower()
     if shift not in ("day", "night"):
         shift = shift_of(now_uae())
+    old_status = m.status
     m.status = new_status
     m.notes = note or m.notes
     m.updated_by = session.get("display_name", session.get("username", "Unknown"))
@@ -740,6 +1292,12 @@ def api_machine_status(mid):
     log = MachineLog(machine_id=m.id, status=new_status, note=note,
                     updated_by=m.updated_by, shift=shift)
     db.session.add(log)
+    audit_log("machine_status", entity_type="machine", entity_id=m.id,
+              description=f"Machine '{m.name}' status {old_status} -> {new_status}"
+                         + (f" ({note})" if note else ""),
+              meta={"old_status": old_status, "new_status": new_status})
+    if old_status != new_status:
+        _sync_production_run(m, new_status, m.updated_by, shift, now_uae(), note)
     db.session.commit()
     return jsonify({"machine": m.to_dict(), "log": log.to_dict(machine_name=m.name)})
 
@@ -767,6 +1325,8 @@ def api_machine_shift_hours(mid):
         m.updated_by = actor
         m.updated_at = now_uae()
         db.session.add(m)
+        audit_log("machine_status", entity_type="machine", entity_id=m.id,
+                  description=f"Machine '{m.name}' planned shift hours updated")
         db.session.commit()
     return jsonify({"machine": m.to_dict()})
 
@@ -790,7 +1350,11 @@ def api_machines_bulk_start():
         db.session.add(MachineLog(machine_id=m.id, status="running",
                                   note="Bulk start (idle machines)", updated_by=actor,
                                   shift=shift_of(now)))
+        _sync_production_run(m, "running", actor, shift_of(now), now, "Bulk start (idle machines)")
         count += 1
+    if count:
+        audit_log("machine_bulk", description=f"Bulk start of {count} idle machine(s)",
+                  commit=False)
     db.session.commit()
     return jsonify({"updated": count})
 
@@ -814,7 +1378,11 @@ def api_machines_bulk_stop():
         db.session.add(MachineLog(machine_id=m.id, status="idle",
                                   note="Bulk stop (running machines)", updated_by=actor,
                                   shift=shift_of(now)))
+        _sync_production_run(m, "idle", actor, shift_of(now), now, "Bulk stop (running machines)")
         count += 1
+    if count:
+        audit_log("machine_bulk", description=f"Bulk stop of {count} running machine(s)",
+                  commit=False)
     db.session.commit()
     return jsonify({"updated": count})
 
@@ -828,8 +1396,10 @@ def api_machines_bulk_update():
         status       - one of running|idle|maintenance|out_of_order
         shift        - optional "day"|"night" (or "" to keep current)
         machine_ids  - list of machine ids to update
-        update_runs  - if true and the new status is "idle", any running
-                       production runs for those machines are stopped.
+        update_runs  - accepted for backwards compatibility; production runs
+                       are now kept in sync on every status change (a
+                       transition to "running" opens a run; any other status
+                       stops the machine's open run).
     """
     data = request.get_json(silent=True) or {}
     status = (data.get("status") or "").strip().lower()
@@ -850,6 +1420,7 @@ def api_machines_bulk_update():
     now = now_uae()
     count = 0
     for m in Machine.query.filter(Machine.id.in_(machine_ids)).all():
+        old_status = m.status
         m.status = status
         m.updated_by = actor
         m.updated_at = now
@@ -857,12 +1428,13 @@ def api_machines_bulk_update():
         db.session.add(MachineLog(
             machine_id=m.id, status=status, note="Bulk update",
             updated_by=actor, shift=shift or shift_of(now)))
-        if update_runs and status == "idle":
-            for r in ProductionRun.query.filter_by(machine_id=m.id, status="running").all():
-                r.status = "stopped"
-                r.stopped_at = now
-                db.session.add(r)
+        if old_status != status:
+            _sync_production_run(m, status, actor, shift or shift_of(now), now, "Bulk update")
         count += 1
+    if count:
+        audit_log("machine_bulk",
+                  description=f"Bulk status update to '{status}' on {count} machine(s)",
+                  commit=False)
     db.session.commit()
     return jsonify({"updated": count})
 
@@ -904,10 +1476,125 @@ def api_products():
 @app.route("/api/machine-logs")
 @login_required
 def api_logs():
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = int(request.args.get("limit", 50))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid limit"}), 400
     logs = MachineLog.query.order_by(MachineLog.timestamp.desc()).limit(limit).all()
-    machine_names = {m.id: m.name for m in Machine.query.all()}
-    return jsonify({"logs": [l.to_dict(machine_name=machine_names.get(l.machine_id)) for l in logs]})
+    machines = Machine.query.all()
+    machine_names = {m.id: m.name for m in machines}
+    products = {p.id: p.name for p in Product.query.all()}
+    machine_products = {m.id: products.get(m.product_id, "Unassigned") for m in machines}
+    return jsonify({"logs": [l.to_dict(
+        machine_name=machine_names.get(l.machine_id),
+        product_name=machine_products.get(l.machine_id),
+    ) for l in logs]})
+
+
+# ---------------------------------------------------------------------------
+# API: user audit trail (full activity log + per-user "trail")
+# ---------------------------------------------------------------------------
+# Human-readable labels for the audit `action` values (filter dropdown +
+# row rendering in the Audit Trail page).
+AUDIT_ACTION_LABELS = {
+    "login": "Login",
+    "logout": "Logout",
+    "user_create": "User created",
+    "user_update": "User updated",
+    "user_delete": "User deleted",
+    "machine_status": "Machine status",
+    "machine_bulk": "Machine bulk update",
+    "run_start": "Run started",
+    "run_stop": "Run stopped",
+    "record_upsert": "Workforce record",
+}
+
+
+def _apply_audit_filters(q):
+    """Apply query-string filters to a UserAuditLog query.
+
+    Filters: user (actor, fuzzy), action, entity_type, search (description),
+    date_from, date_to. Raises ValueError on malformed dates.
+    """
+    user = (request.args.get("user") or "").strip()
+    if user:
+        q = q.filter(UserAuditLog.actor.ilike(f"%{user}%"))
+    action = (request.args.get("action") or "").strip()
+    if action:
+        q = q.filter(UserAuditLog.action == action)
+    entity_type = (request.args.get("entity_type") or "").strip()
+    if entity_type:
+        q = q.filter(UserAuditLog.entity_type == entity_type)
+    search = (request.args.get("search") or "").strip().lower()
+    if search:
+        q = q.filter(UserAuditLog.description.ilike(f"%{search}%"))
+    date_from = request.args.get("date_from")
+    if date_from:
+        try:
+            q = q.filter(UserAuditLog.timestamp >= datetime.fromisoformat(date_from))
+        except ValueError:
+            raise ValueError("Invalid date_from")
+    date_to = request.args.get("date_to")
+    if date_to:
+        try:
+            end = datetime.fromisoformat(date_to)
+            q = q.filter(UserAuditLog.timestamp < end + timedelta(days=1))
+        except ValueError:
+            raise ValueError("Invalid date_to")
+    return q
+
+
+@app.route("/api/audit-logs")
+@login_required
+@page_required("audit")
+def api_audit_logs():
+    try:
+        limit = int(request.args.get("limit", 100))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid limit"}), 400
+    if limit <= 0 or limit > 500:
+        limit = 100
+    try:
+        q = _apply_audit_filters(UserAuditLog.query)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    logs = q.order_by(UserAuditLog.timestamp.desc()).limit(limit).all()
+    return jsonify({
+        "logs": [l.to_dict() for l in logs],
+        "count": len(logs),
+        "actions": AUDIT_ACTION_LABELS,
+    })
+
+
+@app.route("/api/audit-logs/export")
+@login_required
+@page_required("audit")
+def api_audit_logs_export():
+    import csv
+    import io
+    try:
+        q = _apply_audit_filters(UserAuditLog.query)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    logs = q.order_by(UserAuditLog.timestamp.desc()).limit(10000).all()
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["Time", "User", "Action", "Entity", "Entity ID",
+                     "Description", "IP"])
+    for l in logs:
+        writer.writerow([
+            l.timestamp.isoformat() if l.timestamp else "",
+            l.actor or "",
+            AUDIT_ACTION_LABELS.get(l.action, l.action),
+            l.entity_type or "",
+            l.entity_id if l.entity_id is not None else "",
+            l.description or "",
+            l.ip_address or "",
+        ])
+    resp = make_response(buf.getvalue())
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=audit_log.csv"
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -926,18 +1613,18 @@ def _build_report_events():
         try:
             q = q.filter(MachineLog.machine_id == int(machine_id))
         except ValueError:
-            pass
+            raise ValueError("Invalid machine_id")
     if date_from:
         try:
             q = q.filter(MachineLog.timestamp >= datetime.fromisoformat(date_from))
         except ValueError:
-            pass
+            raise ValueError("Invalid date_from")
     if date_to:
         try:
             end = datetime.fromisoformat(date_to)
             q = q.filter(MachineLog.timestamp < end + timedelta(days=1))
         except ValueError:
-            pass
+            raise ValueError("Invalid date_to")
     shift = (request.args.get("shift") or "").strip().lower()
     if shift in ("day", "night"):
         q = q.filter(MachineLog.shift == shift)
@@ -946,9 +1633,22 @@ def _build_report_events():
     machines = Machine.query.all()
     machine_names = {m.id: m.name for m in machines}
     machine_codes = {m.id: m.code for m in machines}
+    products = {p.id: p.name for p in Product.query.all()}
+    machine_products = {m.id: products.get(m.product_id, "Unassigned") for m in machines}
+
+    # Next status-change timestamp per machine -> duration the held status lasted.
+    next_ts = {}
+    by_machine = {}
+    for l in logs:
+        by_machine.setdefault(l.machine_id, []).append(l)
+    for lst in by_machine.values():
+        for i, l in enumerate(lst):
+            nxt = lst[i + 1].timestamp if i + 1 < len(lst) else None
+            next_ts[l.id] = nxt
 
     last_status = {}
     events = []
+    status_totals = {}
     for l in logs:
         from_status = last_status.get(l.machine_id)
         to_status = l.status
@@ -961,13 +1661,20 @@ def _build_report_events():
             hay = f"{name} {code} {l.updated_by} {l.note or ''}".lower()
             if search not in hay:
                 continue
+        nxt = next_ts[l.id]
+        duration = int((nxt - l.timestamp).total_seconds()) if nxt else None
+        if duration is not None:
+            status_totals[to_status] = status_totals.get(to_status, 0) + duration
         events.append({
             "id": l.id,
             "machine_id": l.machine_id,
             "machine_name": name,
             "machine_code": code,
+            "product_name": machine_products.get(l.machine_id, "Unassigned"),
             "from_status": from_status,
             "to_status": to_status,
+            "shift": l.shift or "",
+            "duration_seconds": duration,
             "note": l.note or "",
             "updated_by": l.updated_by or "",
             "timestamp": l.timestamp.isoformat() if l.timestamp else None,
@@ -975,25 +1682,32 @@ def _build_report_events():
 
     # newest first
     events.reverse()
-    return events
+    return events, status_totals
 
 
 @app.route("/api/reports")
 @login_required
 def api_reports():
-    events = _build_report_events()
+    try:
+        events, status_totals = _build_report_events()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     # summary of transitions
     summary = {}
     for e in events:
         key = f"{e['from_status'] or 'initial'} → {e['to_status']}"
         summary[key] = summary.get(key, 0) + 1
-    return jsonify({"events": events, "summary": summary, "count": len(events)})
+    return jsonify({"events": events, "summary": summary,
+                    "count": len(events), "status_totals": status_totals})
 
 
 @app.route("/api/reports/export")
 @login_required
 def api_reports_export():
-    events = _build_report_events()
+    try:
+        events, _ = _build_report_events()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     def fmt(ts):
         if not ts:
@@ -1005,15 +1719,18 @@ def api_reports_export():
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Timestamp", "Machine", "Code", "From Status",
-                     "To Status", "Updated By", "Note"])
+    writer.writerow(["Timestamp", "Machine", "Code", "Product", "From Status",
+                     "To Status", "Shift", "Duration", "Updated By", "Note"])
     for e in events:
         writer.writerow([
             fmt(e["timestamp"]),
             e["machine_name"],
             e["machine_code"],
+            e["product_name"],
             e["from_status"] or "initial",
             e["to_status"],
+            e["shift"] or "",
+            _fmt_duration(e["duration_seconds"]) if e["duration_seconds"] is not None else "",
             e["updated_by"],
             e["note"],
         ])
@@ -1072,7 +1789,7 @@ def upsert_record():
             try:
                 setattr(rec, f, int(data[f]))
             except (TypeError, ValueError):
-                setattr(rec, f, 0)
+                return jsonify({"error": f"Field '{f}' must be a whole number"}), 400
 
     for f in ["working_machine_names", "out_of_order_machine_names",
               "workers_on_leave_names", "maintenance_staff", "loading_staff_names"]:
@@ -1084,6 +1801,9 @@ def upsert_record():
         rec.shift = "night" if shift_val == "night" else "day"
 
     db.session.commit()
+    audit_log("record_upsert", entity_type="record", entity_id=rec.id,
+              description=f"Workforce record saved for {_fmt_date(rec.record_date)} ({rec.shift})",
+              commit=True)
     return jsonify({"record": rec.to_dict()})
 
 
@@ -1136,21 +1856,55 @@ def api_workforce_summary():
 @app.route("/api/history")
 @login_required
 def history():
-    """Return recent daily records (newest first) for the history table."""
-    limit = int(request.args.get("limit", 30))
-    date_str = request.args.get("date")
+    """Return daily records for the history table.
+
+    By default it returns the most recent ``limit`` records (newest first).
+    If ``month`` (YYYY-MM) is supplied it returns ALL records within that
+    calendar month (newest first) -- this is what the Workforce page uses to
+    show the current month's history. A single ``date`` filter is still
+    honoured when no month is given.
+    """
     shift = (request.args.get("shift") or "").strip().lower()
-    shift = "night" if shift == "night" else "day"
-    q = DailyRecord.query
-    if date_str:
+    shift = "night" if shift == "night" else ("day" if shift == "day" else "")
+
+    # ---- Optional month filter (current-month history) ----
+    month_str = (request.args.get("month") or "").strip()
+    month_start = month_end = None
+    if month_str:
         try:
-            target = date.fromisoformat(date_str)
+            month_start = datetime.strptime(month_str, "%Y-%m").date()
         except ValueError:
-            return jsonify({"error": "Invalid date format"}), 400
-        q = q.filter_by(record_date=target)
+            return jsonify({"error": "Invalid month format, expected YYYY-MM"}), 400
+        if month_start.month == 12:
+            month_end = date(month_start.year + 1, 1, 1)
+        else:
+            month_end = date(month_start.year, month_start.month + 1, 1)
+
+    q = DailyRecord.query
+    if month_start:
+        q = q.filter(DailyRecord.record_date >= month_start,
+                     DailyRecord.record_date < month_end)
+    else:
+        date_str = request.args.get("date")
+        if date_str:
+            try:
+                target = date.fromisoformat(date_str)
+            except ValueError:
+                return jsonify({"error": "Invalid date format"}), 400
+            q = q.filter_by(record_date=target)
+
     if shift:
         q = q.filter_by(shift=shift)
-    recs = q.order_by(DailyRecord.record_date.desc()).limit(limit).all()
+
+    if month_start:
+        recs = q.order_by(DailyRecord.record_date.desc()).all()
+    else:
+        try:
+            limit = int(request.args.get("limit", 30))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid limit"}), 400
+        recs = q.order_by(DailyRecord.record_date.desc()).limit(limit).all()
+
     return jsonify({"records": [r.to_dict() for r in recs]})
 
 
@@ -1172,6 +1926,13 @@ def users_page():
     return render_template("users.html", user=current_user(), PAGE_KEYS=PAGE_KEYS)
 
 
+@app.route("/audit")
+@login_required
+@page_required("audit")
+def audit_page():
+    return render_template("audit.html", user=current_user())
+
+
 @app.route("/api/users")
 @login_required
 @admin_required
@@ -1189,10 +1950,13 @@ def api_users_create():
     password = data.get("password") or ""
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
+    if len(password) < 4:
+        return jsonify({"error": "Password must be at least 4 characters"}), 400
     if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists"}), 400
     role = (data.get("role") or "operator").strip().lower()
-    if role not in ("admin", "supervisor", "operator", "viewer"):
+    if role not in ("admin", "supervisor", "operator", "viewer",
+                    "general_manager", "operation_manager", "production_manager"):
         role = "operator"
     perms = data.get("permissions") or default_permissions(role)
     if role == "admin":
@@ -1205,6 +1969,9 @@ def api_users_create():
              is_active=bool(data.get("is_active", True)))
     db.session.add(u)
     db.session.commit()
+    audit_log("user_create", entity_type="user", entity_id=u.id,
+              description=f"Created user '{u.username}' (role: {u.role})",
+              actor=current_actor(), commit=True)
     return jsonify({"user": u.to_dict()}), 201
 
 
@@ -1224,7 +1991,8 @@ def api_users_update(uid):
         u.display_name = str(data["display_name"]).strip() or u.username
     if "role" in data:
         r = str(data["role"]).strip().lower()
-        if r in ("admin", "supervisor", "operator", "viewer"):
+        if r in ("admin", "supervisor", "operator", "viewer",
+                 "general_manager", "operation_manager", "production_manager"):
             u.role = r
     if "is_active" in data:
         u.is_active = bool(data["is_active"])
@@ -1238,6 +2006,9 @@ def api_users_update(uid):
             return jsonify({"error": "Password must be at least 4 characters"}), 400
         u.password_hash = generate_password_hash(data["password"])
     db.session.commit()
+    audit_log("user_update", entity_type="user", entity_id=u.id,
+              description=f"Updated user '{u.username}' (role: {u.role}, active: {u.is_active})",
+              actor=current_actor(), commit=True)
     return jsonify({"user": u.to_dict()})
 
 
@@ -1253,8 +2024,13 @@ def api_users_delete(uid):
     cur = current_user()
     if isinstance(cur, User) and cur.id == u.id:
         return jsonify({"error": "You cannot delete your own account"}), 400
+    deleted_name = u.username
+    deleted_id = u.id
     db.session.delete(u)
     db.session.commit()
+    audit_log("user_delete", entity_type="user", entity_id=deleted_id,
+              description=f"Deleted user '{deleted_name}'",
+              actor=current_actor(), commit=True)
     return jsonify({"ok": True})
 
 
@@ -1482,33 +2258,59 @@ def runs_page():
 def api_runs():
     machine_id = request.args.get("machine_id")
     status = request.args.get("status")  # running | stopped
-    date_str = request.args.get("date")
+    date_str = request.args.get("date")  # legacy single-day support
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
     shift = (request.args.get("shift") or "").strip().lower()
+    machine_status_filter = request.args.get("machine_status")
     q = ProductionRun.query
     if machine_id:
         try:
             q = q.filter(ProductionRun.machine_id == int(machine_id))
         except ValueError:
-            pass
+            return jsonify({"error": "Invalid machine_id"}), 400
     if status:
         q = q.filter(ProductionRun.status == status)
+    if machine_status_filter:
+        q = q.join(Machine).filter(Machine.status == machine_status_filter)
+    if date_from:
+        try:
+            d = date.fromisoformat(date_from)
+            q = q.filter(db.func.date(ProductionRun.started_at) >= d.isoformat())
+        except ValueError:
+            return jsonify({"error": "Invalid date_from"}), 400
+    if date_to:
+        try:
+            d = date.fromisoformat(date_to)
+            q = q.filter(db.func.date(ProductionRun.started_at) <= d.isoformat())
+        except ValueError:
+            return jsonify({"error": "Invalid date_to"}), 400
     if date_str:
         try:
             d = date.fromisoformat(date_str)
             q = q.filter(db.func.date(ProductionRun.started_at) == d.isoformat())
         except ValueError:
-            pass
+            return jsonify({"error": "Invalid date"}), 400
     if shift in ("day", "night"):
         q = q.filter(ProductionRun.shift == shift)
-    runs = q.order_by(ProductionRun.started_at.desc()).limit(200).all()
-    machines = {m.id: m.name for m in Machine.query.all()}
-    machine_status = {m.id: m.status for m in Machine.query.all()}
+    # Raise the row cap when a narrowing filter is applied so date ranges
+    # (and other filters) aren't truncated.
+    has_filter = any([machine_id, status, date_str, date_from, date_to, shift])
+    runs = q.order_by(ProductionRun.started_at.desc()).limit(2000     if has_filter else 200).all()
     products = {p.id: p.name for p in Product.query.all()}
     groups = {g.id: g.name for g in Group.query.all()}
+    all_machines = Machine.query.all()
+    machines = {m.id: m.name for m in all_machines}
+    machine_status = {m.id: m.status for m in all_machines}
+    # Fall back to the machine's own product/group when a run wasn't stored
+    # with one (e.g. legacy runs, bulk/status runs before product tracking,
+    # or console starts left on "— none —").
+    machine_product = {m.id: products.get(m.product_id) for m in all_machines}
+    machine_group = {m.id: groups.get(m.group_id) for m in all_machines}
     return jsonify({
         "runs": [r.to_dict(machine_name=machines.get(r.machine_id),
-                           product_name=products.get(r.product_id),
-                           group_name=groups.get(r.group_id),
+                           product_name=products.get(r.product_id) or machine_product.get(r.machine_id),
+                           group_name=groups.get(r.group_id) or machine_group.get(r.machine_id),
                            machine_status=machine_status.get(r.machine_id)) for r in runs]
     })
 
@@ -1528,7 +2330,13 @@ def api_run_start():
         open_run.stopped_at = now_uae()
         db.session.add(open_run)
     product_id = data.get("product_id") or None
+    if product_id is not None:
+        if not Product.query.get(product_id):
+            return jsonify({"error": "Invalid product_id"}), 400
     group_id = data.get("group_id") or m.group_id
+    if group_id is not None:
+        if not Group.query.get(group_id):
+            return jsonify({"error": "Invalid group_id"}), 400
     shift = (data.get("shift") or "").strip().lower()
     if shift not in ("day", "night"):
         shift = shift_of(now_uae())
@@ -1550,6 +2358,10 @@ def api_run_start():
     db.session.add(MachineLog(machine_id=m.id, status="running",
                               note="Run started" + (f" ({run.item_name})" if run.item_name else ""),
                               updated_by=run.operator, shift=shift))
+    audit_log("run_start", entity_type="machine", entity_id=m.id,
+              description=f"Production run started on '{m.name}'"
+                         + (f" ({run.item_name})" if run.item_name else ""),
+              meta={"run_id": run.id})
     db.session.commit()
     return jsonify({"run": run.to_dict(machine_name=m.name)}), 201
 
@@ -1576,25 +2388,132 @@ def api_run_stop(rid):
             db.session.add(MachineLog(machine_id=m.id, status="idle",
                                       note=f"Run stopped ({_fmt_duration(run.run_seconds())})",
                                       updated_by=m.updated_by, shift=shift))
+            audit_log("run_stop", entity_type="machine", entity_id=m.id,
+                      description=f"Production run #{run.id} stopped on '{m.name}'"
+                                 f" ({_fmt_duration(run.run_seconds())})",
+                      meta={"run_id": run.id})
         db.session.commit()
     return jsonify({"run": run.to_dict()})
+
+
+@app.route("/api/run/<int:rid>", methods=["PUT"])
+@login_required
+def api_run_update(rid):
+    """Edit a production run's entry date/time (and status/note) after the fact.
+
+    Used by the Runs page "Edit" modal to correct a run's started_at /
+    stopped_at when they were recorded incorrectly. This is an "entry"-level
+    correction, so it is restricted to users with the `entry` page permission.
+    """
+    if not user_can("entry"):
+        abort(403)
+    run = ProductionRun.query.get_or_404(rid)
+    data = request.get_json(silent=True) or {}
+
+    # --- started_at (required, must be a valid datetime) ---
+    started_raw = (data.get("started_at") or "").strip()
+    if not started_raw:
+        return jsonify({"error": "started_at is required"}), 400
+    try:
+        started_at = datetime.fromisoformat(started_raw)
+    except ValueError:
+        return jsonify({"error": "Invalid started_at format"}), 400
+
+    # --- stopped_at (optional; blank keeps the run running) ---
+    stopped_raw = (data.get("stopped_at") or "").strip()
+    stopped_at = None
+    if stopped_raw:
+        try:
+            stopped_at = datetime.fromisoformat(stopped_raw)
+        except ValueError:
+            return jsonify({"error": "Invalid stopped_at format"}), 400
+        if stopped_at < started_at:
+            return jsonify({"error": "Stop time cannot be before start time"}), 400
+
+    run.started_at = started_at
+    run.stopped_at = stopped_at
+    # Recompute the shift from the (possibly corrected) start time.
+    run.shift = shift_of(started_at)
+
+    # --- status (optional) ---
+    status = (data.get("status") or "").strip().lower()
+    if status in ("running", "stopped"):
+        # Keep status consistent with whether a stop time was supplied.
+        if status == "stopped" and stopped_at is None:
+            stopped_at = now_uae()
+            run.stopped_at = stopped_at
+            run.shift = shift_of(stopped_at)
+        if status == "running":
+            run.stopped_at = None
+        run.status = status
+
+    if "note" in data:
+        run.note = str(data["note"]).strip()
+
+    db.session.add(run)
+    db.session.commit()
+    return jsonify({"run": run.to_dict()})
+
+@app.route("/api/run/<int:rid>", methods=["DELETE"])
+@login_required
+def api_run_delete(rid):
+    """Delete a production run.
+
+    This is a correction available to users with the `entry` page permission
+    (the same gate as editing a run). Viewers and any user without `entry`
+    receive a 403.
+    """
+    if not user_can("entry"):
+        abort(403)
+    run = ProductionRun.query.get_or_404(rid)
+    db.session.delete(run)
+    db.session.commit()
+    return jsonify({"ok": True, "id": rid})
+
+
 
 
 @app.route("/api/runs/export")
 @login_required
 def api_runs_export():
-    date_str = request.args.get("date")
+    machine_id = request.args.get("machine_id")
+    status = request.args.get("status")  # running | stopped
+    date_str = request.args.get("date")  # legacy single-day support
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
     shift = (request.args.get("shift") or "").strip().lower()
+    machine_status_filter = request.args.get("machine_status")
     q = ProductionRun.query
+    if machine_id:
+        try:
+            q = q.filter(ProductionRun.machine_id == int(machine_id))
+        except ValueError:
+            return jsonify({"error": "Invalid machine_id"}), 400
+    if status:
+        q = q.filter(ProductionRun.status == status)
+    if machine_status_filter:
+        q = q.join(Machine).filter(Machine.status == machine_status_filter)
+    if date_from:
+        try:
+            d = date.fromisoformat(date_from)
+            q = q.filter(db.func.date(ProductionRun.started_at) >= d.isoformat())
+        except ValueError:
+            return jsonify({"error": "Invalid date_from"}), 400
+    if date_to:
+        try:
+            d = date.fromisoformat(date_to)
+            q = q.filter(db.func.date(ProductionRun.started_at) <= d.isoformat())
+        except ValueError:
+            return jsonify({"error": "Invalid date_to"}), 400
     if date_str:
         try:
             d = date.fromisoformat(date_str)
             q = q.filter(db.func.date(ProductionRun.started_at) == d.isoformat())
         except ValueError:
-            pass
+            return jsonify({"error": "Invalid date"}), 400
     if shift in ("day", "night"):
         q = q.filter(ProductionRun.shift == shift)
-    runs = q.order_by(ProductionRun.started_at.desc()).limit(500).all()
+    runs = q.order_by(ProductionRun.started_at.desc()).all()
     machines = {m.id: m.name for m in Machine.query.all()}
     products = {p.id: p.name for p in Product.query.all()}
     groups = {g.id: g.name for g in Group.query.all()}

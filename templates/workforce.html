@@ -40,6 +40,8 @@
         <div class="field">
           <label for="wf-total">Total Workforce</label>
           <input type="number" id="wf-total" min="0" placeholder="0" />
+          <span id="wf-total-warn" class="form-warn" hidden
+                style="color:var(--red);font-size:.82rem;margin-top:.25rem;display:block"></span>
         </div>
         <div class="field">
           <label for="wf-metex">Metex</label>
@@ -81,6 +83,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn" id="wfSave">Save Workforce</button>
+        <button type="button" class="btn secondary" id="wfClear">Clear</button>
         <span class="form-status" id="wfStatus"></span>
       </div>
     </form>
@@ -88,8 +91,13 @@
 
   <!-- ===================== HISTORY TABLE ===================== -->
   <div class="toolbar">
-    <div class="section-title">Workforce History</div>
-    <button class="btn secondary" id="wfRefresh">Refresh</button>
+    <div class="section-title">Workforce History <span id="wfMonthLabel" class="muted"></span></div>
+    <div class="filters">
+      <label class="inline" for="wfMonth">Month
+        <input type="month" id="wfMonth" />
+      </label>
+      <button class="btn secondary" id="wfRefresh">Refresh</button>
+    </div>
   </div>
   <div class="table-wrap">
     <table id="wfTable">
@@ -116,9 +124,46 @@
 <script>
   const $ = (id) => document.getElementById(id);
 
+  // ---- Auto-calculated Total Workforce ---------------------------------------
+  // Total = Metex + CSK + TopQuality + BestCare + Prestige. The Total field
+  // stays editable (per product decision); editing the 5 breakdowns auto-fills
+  // it, but a manually typed Total that disagrees with the sum only shows a
+  // warning (it is saved as-is). "workers_on_leave" / "loading_staff" are
+  // deliberately NOT part of this total.
+  const BREAKDOWN_IDS = ['wf-metex', 'wf-csk', 'wf-topq', 'wf-best', 'wf-prestige'];
+
+  function sumBreakdown() {
+    return BREAKDOWN_IDS.reduce((s, id) => s + (parseInt($(id).value, 10) || 0), 0);
+  }
+
+  function validateTotal() {
+    const el = $('wf-total');
+    const warn = $('wf-total-warn');
+    const expected = sumBreakdown();
+    const totalVal = el.value.trim();
+    const total = totalVal === '' ? NaN : parseInt(totalVal, 10);
+    const mismatch = totalVal !== '' && !isNaN(total) && total !== expected;
+    el.style.borderColor = mismatch ? 'var(--red)' : '';
+    el.style.boxShadow = mismatch ? '0 0 0 2px rgba(248,113,113,.25)' : '';
+    warn.hidden = !mismatch;
+    if (mismatch) {
+      warn.textContent = `⚠ Total (${total}) ≠ sum of groups (${expected}). Please verify before saving.`;
+    }
+    return !mismatch;
+  }
+
+  function recalcTotal() {
+    $('wf-total').value = sumBreakdown();
+    validateTotal(); // clears any warning after auto-fill
+  }
+
   function todayISO() {
+    // Use the local date (not UTC) so the default date is correct in the
+    // UAE timezone between 00:00 and 04:00, when UTC-based toISOString()
+    // would roll the date back to the previous day.
     const d = new Date();
-    return d.toISOString().slice(0, 10);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   // ---- KPI cards (dashboard-style with clickable dropdowns) ----
@@ -223,8 +268,9 @@
     const data = await res.json();
     const r = data.record;
     if (!r) {
-      ['wf-total','wf-metex','wf-csk','wf-topq','wf-best','wf-prestige','wf-leave','wf-leave-names','wf-loading','wf-loading-names']
-        .forEach(id => $(id).value = '');
+      // No saved record for this date + shift: keep whatever is already in the
+      // form so the user can copy a previously loaded entry forward to a new
+      // date/shift (a "save as next date" workflow) instead of being wiped.
       return;
     }
     $('wf-total').value    = r.total_workforce || 0;
@@ -237,14 +283,35 @@
     $('wf-leave-names').value = r.workers_on_leave_names || '';
     $('wf-loading').value  = r.loading_staff || 0;
     $('wf-loading-names').value = r.loading_staff_names || '';
+    // Re-sync the Total field from the loaded breakdown values. If the stored
+    // total disagreed with the sum, this auto-corrects the displayed total and
+    // shows a warning so the operator knows before saving.
+    recalcTotal();
+  }
+
+  function currentMonthISO() {
+    // Local YYYY-MM for the current month (matches <input type="month">).
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  }
+
+  function monthLabel(month) {
+    if (!month) return '';
+    const [y, m] = month.split('-').map(Number);
+    const names = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${names[m - 1]} ${y}`;
   }
 
   async function loadHistory() {
-    const res = await fetch(`/api/history?limit=50&date=${encodeURIComponent(selectedDate())}&shift=${selectedShift()}`);
+    const month = $('wfMonth').value || currentMonthISO();
+    $('wfMonthLabel').textContent = '· ' + monthLabel(month);
+    const res = await fetch(`/api/history?month=${encodeURIComponent(month)}&shift=${selectedShift()}`);
     const data = await res.json();
     const tbody = $('wfTable').querySelector('tbody');
     if (!data.records.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty">No workforce records yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="empty">No workforce records for this month yet.</td></tr>';
       return;
     }
     tbody.innerHTML = data.records.map(r => `
@@ -298,13 +365,32 @@
     setTimeout(() => { status.textContent = ''; }, 2500);
   }
 
+  function clearForm() {
+    ['wf-total','wf-metex','wf-csk','wf-topq','wf-best','wf-prestige',
+     'wf-leave','wf-leave-names','wf-loading','wf-loading-names']
+      .forEach(id => $(id).value = '');
+    $('wfStatus').textContent = '';
+    validateTotal();
+  }
+
   // init
   $('wf-date').value = todayISO();
+  $('wfMonth').value = currentMonthISO();
   $('wfForm').addEventListener('submit', saveRecord);
+  $('wfClear').addEventListener('click', clearForm);
   $('wfRefresh').addEventListener('click', loadHistory);
+  $('wfMonth').addEventListener('change', loadHistory);
   document.querySelectorAll('input[name="wf-shift"]').forEach(r =>
-    r.addEventListener('change', loadRecordIntoForm));
+    r.addEventListener('change', () => { loadRecordIntoForm(); loadHistory(); }));
   $('wf-date').addEventListener('change', loadRecordIntoForm);
+
+  // ---- Auto-calc Total Workforce wiring ----
+  // Editing any of the 5 breakdown fields instantly recalculates the Total.
+  BREAKDOWN_IDS.forEach(id => $(id).addEventListener('input', recalcTotal));
+  // Editing the Total directly only validates (shows a warning on mismatch);
+  // it never overwrites the breakdown fields (the field stays user-editable).
+  $('wf-total').addEventListener('input', validateTotal);
+
   loadRecordIntoForm();
   loadKpis();
   loadHistory();

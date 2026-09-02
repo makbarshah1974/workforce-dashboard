@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Workforce Dashboard{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
-    // Apply persisted theme before first paint to avoid a flash.
+    // Apply persisted theme + accent before first paint to avoid a flash.
     (function () {
       try {
         if (localStorage.getItem('theme') === 'light') {
           document.documentElement.classList.add('light');
         }
+        var a = localStorage.getItem('accent');
+        if (a) document.documentElement.classList.add('theme-' + a);
       } catch (e) {}
     })();
   </script>
@@ -29,6 +31,11 @@
       <span class="font-bold text-brand-100">Workforce</span>
     </div>
     <div class="flex items-center gap-2">
+      <div class="accent-swatches" role="group" aria-label="Accent color">
+        <button type="button" class="accent-swatch" data-accent="indigo" title="Indigo" aria-label="Indigo"></button>
+        <button type="button" class="accent-swatch" data-accent="teal" title="Teal" aria-label="Teal"></button>
+        <button type="button" class="accent-swatch" data-accent="violet" title="Violet" aria-label="Violet"></button>
+      </div>
       <button id="themeToggle" class="p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
       </button>
@@ -61,35 +68,61 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           Dashboard
         </a>
+        {% if user_can('machines') %}
         <a href="{{ url_for('machines_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           Machines
         </a>
+        {% endif %}
+        {% if user_can('products') %}
         <a href="{{ url_for('products_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           Products
         </a>
+        {% endif %}
+        {% if user_can('groups') %}
         <a href="{{ url_for('groups_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
           Groups
         </a>
+        {% endif %}
+        {% if user_can('reports') %}
         <a href="{{ url_for('reports_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Reports
         </a>
+        {% endif %}
+        {% if user_can('summary') %}
+        <a href="{{ url_for('summary_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Summary
+        </a>
+        {% endif %}
+        {% if user_can('audit') %}
+        <a href="{{ url_for('audit_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Audit Trail
+        </a>
+        {% endif %}
+        {% if user_can('entry') %}
         <a href="{{ url_for('entry') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
           Run Console
         </a>
+        {% endif %}
+        {% if user_can('workforce') %}
         <a href="{{ url_for('workforce_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
           Workforce
         </a>
+        {% endif %}
+        {% if user_can('runs') %}
         <a href="{{ url_for('runs_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Production Runs
         </a>
-        {% if user and user.role == 'admin' %}
+        {% endif %}
+        {% if is_admin_user %}
         <a href="{{ url_for('users_page') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           User Management
@@ -125,6 +158,11 @@
       </div>
           </div>
           <span id="clock" class="text-sm text-slate-400 tabular-nums"></span>
+          <div class="accent-swatches" role="group" aria-label="Accent color">
+            <button type="button" class="accent-swatch" data-accent="indigo" title="Indigo" aria-label="Indigo"></button>
+            <button type="button" class="accent-swatch" data-accent="teal" title="Teal" aria-label="Teal"></button>
+            <button type="button" class="accent-swatch" data-accent="violet" title="Violet" aria-label="Violet"></button>
+          </div>
           <button id="themeToggle3" class="p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200 ease-in-out" aria-label="Toggle theme">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           </button>
@@ -162,11 +200,34 @@
       document.getElementById(id)?.addEventListener('click', toggleTheme);
     });
 
+    // Accent theme picker — applies in both light and dark modes.
+    const THEMES = ['indigo', 'teal', 'violet'];
+    function setAccent(name) {
+      const root = document.documentElement;
+      THEMES.forEach(t => root.classList.remove('theme-' + t));
+      if (name) root.classList.add('theme-' + name);
+      try { localStorage.setItem('accent', name || 'indigo'); } catch (e) {}
+      document.querySelectorAll('.accent-swatch').forEach(b => {
+        b.classList.toggle('active', b.dataset.accent === name);
+      });
+    }
+    document.querySelectorAll('.accent-swatch').forEach(b => {
+      b.addEventListener('click', () => setAccent(b.dataset.accent));
+    });
+    // Mark the active swatch on load.
+    (function () {
+      let active = 'indigo';
+      THEMES.forEach(t => { if (document.documentElement.classList.contains('theme-' + t)) active = t; });
+      document.querySelectorAll('.accent-swatch').forEach(b => {
+        b.classList.toggle('active', b.dataset.accent === active);
+      });
+    })();
+
     // Active nav link highlight
     const path = location.pathname;
     document.querySelectorAll('.nav-link').forEach(a => {
       if (a.getAttribute('href') === path) {
-        a.classList.add('bg-slate-700', 'text-brand-100', 'font-semibold');
+        a.classList.add('bg-brand-500', 'text-white', 'font-semibold');
       }
     });
 
@@ -182,6 +243,13 @@
     // ---- Global date + shift filter ----
     // Pages call filterQuery() to scope their API requests and listen for
     // 'wf:filter-changed' to re-fetch. Default (empty) shows all live data.
+    // Summary & Runs pages have their own filter bars, so hide this global one there.
+    if (location.pathname === '/summary' || location.pathname === '/runs') {
+      document.querySelectorAll('.wf-date-input, .wf-shift-btn').forEach(el => {
+        const wrap = el.closest('div');
+        if (wrap) wrap.style.display = 'none';
+      });
+    }
     window.__wfFilter = { date: '', shift: '' };
     function filterQuery() {
       const p = new URLSearchParams();

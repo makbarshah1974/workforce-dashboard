@@ -5,16 +5,41 @@
 
 {% block content %}
   <div class="toolbar">
-    <div class="filters">
-      <select id="statusFilter">
+    <div class="filters flex-wrap gap-3">
+      <!-- Date range -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">From</label>
+        <input type="date" id="dateFrom" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        <label class="text-sm text-slate-400">To</label>
+        <input type="date" id="dateTo" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      </div>
+
+      <!-- Shift -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">Shift</label>
+        <select id="shiftSelect" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">All (full day)</option>
+          <option value="day">Day (07:00–19:00)</option>
+          <option value="night">Night (19:00–07:00)</option>
+        </select>
+      </div>
+
+      <!-- M/C Status -->
+      <select id="statusFilter" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
         <option value="">All M/C Status</option>
         <option value="running">Running</option>
         <option value="out_of_order">Break Down</option>
         <option value="maintenance">Maintenance</option>
         <option value="idle">Idle</option>
       </select>
-      <select id="machineFilter"><option value="">All machines</option></select>
-      <a class="btn secondary" href="/api/runs/export">⬇ Export CSV</a>
+
+      <!-- Machine -->
+      <select id="machineFilter" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="">All machines</option></select>
+
+      <button class="btn primary" id="applyBtn">Apply</button>
+      <button class="btn secondary" id="resetBtn">Reset</button>
+      <a class="btn secondary" id="exportBtn" href="/api/runs/export">⬇ Export CSV</a>
+      <span class="muted" id="periodLabel"></span>
     </div>
     <div class="summary-pills" id="summaryPills"></div>
   </div>
@@ -26,11 +51,54 @@
           <th>Started</th><th>Stopped</th><th>Run Time</th><th>Machine</th>
           <th>Group</th><th>Product</th><th>Item</th><th>Code</th>
           <th>Operator</th><th>M/C Status</th><th>Status</th><th>Note</th>
+          {% if user_can('entry') %}<th>Actions</th>{% endif %}
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
+
+  <!-- ============ EDIT RUN (entry date/time) MODAL ============ -->
+  {% if user_can('entry') %}
+  <div class="modal-overlay" id="runEditOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="runEditTitle">Edit Run</h3>
+        <button class="modal-close" id="runEditClose">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted" id="runEditSub"></p>
+        <form id="runEditForm" class="form-grid run-edit-grid">
+          <input type="hidden" id="runEditId" />
+          <div class="field">
+            <label for="runEditStart">Start Date &amp; Time</label>
+            <input type="datetime-local" id="runEditStart" required />
+          </div>
+          <div class="field">
+            <label for="runEditStop">Stop Date &amp; Time <span class="muted">(blank = still running)</span></label>
+            <input type="datetime-local" id="runEditStop" />
+          </div>
+          <div class="field">
+            <label for="runEditStatus">Status</label>
+            <select id="runEditStatus">
+              <option value="running">Running</option>
+              <option value="stopped">Stopped</option>
+            </select>
+          </div>
+          <div class="field field-wide">
+            <label for="runEditNote">Note</label>
+            <textarea id="runEditNote" rows="2" placeholder="Optional note"></textarea>
+          </div>
+        </form>
+        <p class="form-error" id="runEditError" style="display:none"></p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary" id="runEditCancel">Cancel</button>
+        <button class="btn primary" id="runEditSave">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -46,17 +114,42 @@
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function statusBadge(status) {
-    const meta = { running:{label:'Running',color:'#34d399'}, out_of_order:{label:'Break Down',color:'#f87171'}, maintenance:{label:'Maintenance',color:'#fbbf24'}, idle:{label:'Idle',color:'#94a3b8'} }[status] || { label: status, color: '#94a3b8' };
-    return `<span class="badge ${status}" style="background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55;">${meta.label}</span>`;
+    const label = { running:'Running', out_of_order:'Break Down', maintenance:'Maintenance', idle:'Idle' }[status] || status;
+    return `<span class="badge ${status}">${label}</span>`;
   }
   function machineStatusOf(id) {
     const m = machines.find(x => String(x.id) === String(id));
     return m ? m.status : 'idle';
   }
 
+  // Query builder: date range + shift + machine (mirrors the Summary page).
+  // M/C Status is applied client-side (machine status lives on the Machine, not the run).
+  function buildRunsQuery() {
+    const p = new URLSearchParams();
+    const from = $('dateFrom').value;
+    const to = $('dateTo').value;
+    if (from) p.set('date_from', from);
+    if (to) p.set('date_to', to);
+    const shift = $('shiftSelect').value;
+    if (shift) p.set('shift', shift);
+    const mid = $('machineFilter').value;
+    if (mid) p.set('machine_id', mid);
+    const mstatus = $('statusFilter').value;
+    if (mstatus) p.set('machine_status', mstatus);
+    return p.toString();
+  }
+
+  function periodLabel() {
+    const f = $('dateFrom').value || '—';
+    const t = $('dateTo').value || '—';
+    const sh = $('shiftSelect').value
+      ? ` · ${$('shiftSelect').value.charAt(0).toUpperCase() + $('shiftSelect').value.slice(1)} shift` : '';
+    return `Period: ${f} → ${t}${sh}`;
+  }
+
   // Build the machine filter dropdown ONCE (so the auto-refresh never resets it)
   async function loadMachines() {
-    const m = await fetch('/api/machines?' + filterQuery()).then(x => x.json());
+    const m = await fetch('/api/machines').then(x => x.json());
     machines = m.machines;
     $('machineFilter').innerHTML = '<option value="">All machines</option>' +
       machines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
@@ -64,7 +157,7 @@
 
   // Refresh only the run data on the interval (preserves the user's filter selection)
   async function loadRuns() {
-    const r = await fetch('/api/runs?' + filterQuery()).then(x => x.json());
+    const r = await fetch('/api/runs?' + buildRunsQuery()).then(x => x.json());
     runs = r.runs;
     render();
   }
@@ -117,17 +210,36 @@
           <td>${statusBadge(machineStatusOf(r.machine_id))}</td>
           <td><span class="badge ${r.status}">${r.status === 'running' ? 'Running' : 'Stopped'}</span></td>
           <td>${r.note || ''}</td>
+          {% if user_can('entry') %}<td>
+            <button class="icon-btn" data-edit="${r.id}" title="Edit">✎</button>
+            <button class="icon-btn danger" data-del="${r.id}" title="Delete">🗑</button>
+          </td>{% endif %}
         </tr>`).join('')
-      : '<tr><td colspan="12" class="empty">No runs found.</td></tr>';
+      : '<tr><td colspan="13" class="empty">No runs found.</td></tr>';
   }
 
   $('statusFilter').addEventListener('change', render);
   $('machineFilter').addEventListener('change', render);
+  $('applyBtn').addEventListener('click', () => {
+    $('periodLabel').textContent = periodLabel();
+    syncExportLink();
+    refreshMachineStatuses().then(loadRuns);
+  });
+  $('resetBtn').addEventListener('click', () => {
+    $('dateFrom').value = '';
+    $('dateTo').value = '';
+    $('shiftSelect').value = '';
+    $('statusFilter').value = '';
+    $('machineFilter').selectedIndex = 0;
+    $('periodLabel').textContent = '';
+    syncExportLink();
+    refreshMachineStatuses().then(loadRuns);
+  });
 
-  // Keep the export link in sync with the current date + shift filter.
+  // Keep the export link in sync with the current filter.
   function syncExportLink() {
-    const link = document.querySelector('a[href="/api/runs/export"]');
-    if (link) link.href = '/api/runs/export?' + filterQuery();
+    const link = document.getElementById('exportBtn');
+    if (link) link.href = '/api/runs/export?' + buildRunsQuery();
   }
   syncExportLink();
 
@@ -138,7 +250,84 @@
   // Live cross-tab sync: refresh when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
 
-  // Global date + shift filter: re-fetch runs + machine statuses on change.
-  window.addEventListener('wf:filter-changed', () => { syncExportLink(); loadMachines().then(loadRuns); });
+  // ---- Edit run: adjust entry start/stop date & time ----
+  {% if user_can('entry') %}
+  // Convert an ISO timestamp to a value usable by <input type="datetime-local">
+  // (YYYY-MM-DDTHH:MM). The stored times are naive UAE local time, which the
+  // browser also treats as local, so new Date(iso) round-trips correctly.
+  function toLocalInput(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function openEditRun(id) {
+    const r = runs.find(x => String(x.id) === String(id));
+    if (!r) return;
+    $('runEditId').value = r.id;
+    $('runEditTitle').textContent = 'Edit Run — ' + (r.machine_name || ('Machine ' + r.machine_id));
+    $('runEditSub').textContent = `Run #${r.id} · ${r.product_name || '—'}${r.item_name ? ' · ' + r.item_name : ''}`;
+    $('runEditStart').value = toLocalInput(r.started_at);
+    $('runEditStop').value = toLocalInput(r.stopped_at);
+    $('runEditStatus').value = r.status || 'running';
+    $('runEditNote').value = r.note || '';
+    $('runEditError').style.display = 'none';
+    $('runEditOverlay').classList.add('show');
+  }
+  function closeEditRun() { $('runEditOverlay').classList.remove('show'); }
+
+  async function saveEditRun() {
+    const id = $('runEditId').value;
+    const payload = {
+      started_at: $('runEditStart').value,
+      stopped_at: $('runEditStop').value || '',
+      status: $('runEditStatus').value,
+      note: $('runEditNote').value,
+    };
+    const res = await fetch('/api/run/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast('Run updated');
+      closeEditRun();
+      loadRuns();
+    } else {
+      $('runEditError').textContent = data.error || 'Update failed';
+      $('runEditError').style.display = 'block';
+    }
+  }
+
+  // Open the modal / delete from the per-row buttons (event delegation).
+  $('runTable').querySelector('tbody').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit]');
+    if (editBtn) { openEditRun(editBtn.dataset.edit); return; }
+    const delBtn = e.target.closest('[data-del]');
+    if (delBtn) deleteRun(delBtn.dataset.del);
+  });
+
+  // Delete a production run (with confirmation).
+  async function deleteRun(id) {
+    if (!confirm('Delete this run? This cannot be undone.')) return;
+    const res = await fetch('/api/run/' + id, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast('Run deleted');
+      loadRuns();
+    } else {
+      showToast(data.error || 'Delete failed', true);
+    }
+  }
+  $('runEditClose').addEventListener('click', closeEditRun);
+  $('runEditCancel').addEventListener('click', closeEditRun);
+  $('runEditSave').addEventListener('click', saveEditRun);
+  $('runEditOverlay').addEventListener('click', (e) => {
+    if (e.target === $('runEditOverlay')) closeEditRun();
+  });
+  {% endif %}
 </script>
 {% endblock %}

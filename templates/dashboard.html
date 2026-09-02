@@ -46,6 +46,15 @@
     idle:         { label: 'Idle',         color: '#94a3b8' },
   };
 
+  // Map each KPI card type to a coloured status badge (Total = all / slate).
+  const KPI_BADGE = {
+    total:        { label: 'All',         cls: 'idle' },
+    running:      { label: 'Running',     cls: 'running' },
+    out_of_order: { label: 'Break Down',  cls: 'out_of_order' },
+    maintenance:  { label: 'Maintenance', cls: 'maintenance' },
+    idle:         { label: 'Idle',        cls: 'idle' },
+  };
+
   function fmtTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -83,7 +92,10 @@
           {% else %}
           return `<div class="card kpi-card ${k.cls}" data-type="${k.type}" tabindex="0" role="button" aria-expanded="false">
            <div class="kpi-head">
-             <div class="label">${k.label}</div>
+             <div class="kpi-title">
+               <div class="label">${k.label}</div>
+               ${KPI_BADGE[k.type] ? `<span class="badge ${KPI_BADGE[k.type].cls}">${KPI_BADGE[k.type].label}</span>` : ''}
+             </div>
              <span class="kpi-caret" aria-hidden="true">▾</span>
            </div>
            <div class="value">${k.value}</div>
@@ -137,7 +149,7 @@
         <li>
           <span class="feed-dot" style="background:${STATUS_META[l.status]?.color || '#94a3b8'}"></span>
           <div class="feed-body">
-            <span class="feed-title">${l.machine_name || 'Machine'} → ${STATUS_META[l.status]?.label || l.status}</span>
+            <span class="feed-title">${l.machine_name || 'Machine'}${l.product_name ? ' · ' + l.product_name : ''} → ${STATUS_META[l.status]?.label || l.status}</span>
             <span class="feed-meta">${l.updated_by || '—'} · ${fmtTime(l.timestamp)}</span>
           </div>
         </li>`).join('')
@@ -200,6 +212,7 @@
     return '<ul class="kpi-list">' + items.map(it => `
       <li class="kpi-li">
         <span class="kpi-li-main">${it.name || it.code || '—'}</span>
+        ${it.product_name ? `<span class="kpi-li-sub">${it.product_name}</span>` : ''}
       </li>`).join('') + '</ul>';
   }
 

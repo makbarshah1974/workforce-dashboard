@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% set active = 'summary' %}
+{% block title %}Summary · Monitoring System{% endblock %}
+{% block page_title %}Time Summary{% endblock %}
+
+{% block content %}
+  <div class="toolbar">
+    <div class="filters flex-wrap gap-3">
+      <!-- Machine filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">Machine</label>
+        <select id="machineSelect" multiple size="1" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500 min-w-[180px]">
+          <option value="">All machines</option>
+        </select>
+      </div>
+
+      <!-- Date range -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">From</label>
+        <input type="date" id="dateFrom" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        <label class="text-sm text-slate-400">To</label>
+        <input type="date" id="dateTo" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      </div>
+
+      <!-- Shift -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">Shift</label>
+        <select id="shiftSelect" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">All (full day)</option>
+          <option value="day">Day (07:00–19:00)</option>
+          <option value="night">Night (19:00–07:00)</option>
+        </select>
+      </div>
+
+      <button class="btn primary" id="applyBtn">Apply</button>
+      <button class="btn secondary" id="resetBtn">Reset</button>
+      <span class="muted" id="periodLabel"></span>
+      <div class="segmented" role="group" aria-label="Time format">
+        <button class="seg-btn active" id="fmtHmBtn" data-fmt="hm">HH:MM</button>
+        <button class="seg-btn" id="fmtDaysBtn" data-fmt="days">Days</button>
+      </div>
+      <button class="btn secondary ml-auto" id="exportBtn">Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Grand totals -->
+  <div class="grid grid-4" id="totalCards"></div>
+
+  <!-- View toggle: machine-wise vs day-wise -->
+  <div class="flex items-center gap-3 mb-3">
+    <div class="segmented" role="tablist">
+      <button class="seg-btn active" id="viewMachineBtn" data-view="machine">Machine-wise</button>
+      <button class="seg-btn" id="viewDayBtn" data-view="day">Day-wise</button>
+    </div>
+    <span class="muted" id="viewHint"></span>
+  </div>
+
+  <!-- Machine-wise view -->
+  <div id="machineView">
+    <div class="section-title">Machine-wise Time Breakdown</div>
+    <div class="table-wrap">
+      <table id="summaryTable">
+        <thead>
+          <tr>
+            <th>Machine</th>
+            <th>Code</th>
+            <th>Group</th>
+            <th>Product</th>
+            <th class="num">Run Time</th>
+            <th class="num">Idle Time</th>
+            <th class="num">Break Down</th>
+            <th class="num">Maintenance</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="4">Grand Total</td>
+            <td id="ftRunning" class="num">—</td>
+            <td id="ftIdle" class="num">—</td>
+            <td id="ftBreak" class="num">—</td>
+            <td id="ftMaint" class="num">—</td>
+            <td id="ftTotal" class="num">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Day-wise view -->
+  <div id="dayView" style="display:none">
+    <div class="section-title">Day-wise Time Breakdown</div>
+    <div class="table-wrap">
+      <table id="dayTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="num">Run Time</th>
+            <th class="num">Idle Time</th>
+            <th class="num">Break Down</th>
+            <th class="num">Maintenance</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td>Grand Total</td>
+            <td id="dFtRunning" class="num">—</td>
+            <td id="dFtIdle" class="num">—</td>
+            <td id="dFtBreak" class="num">—</td>
+            <td id="dFtMaint" class="num">—</td>
+            <td id="dFtTotal" class="num">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const STATUS_META = {
+    running:      { label: 'Run Time',     cls: 'running' },
+    idle:         { label: 'Idle Time',    cls: 'idle' },
+    out_of_order: { label: 'Break Down',  cls: 'out_of_order' },
+    maintenance:  { label: 'Maintenance',  cls: 'maintenance' },
+  };
+
+  // When false -> compact HH:MM; when true -> full 'days' format (current default).
+  let useDaysFormat = false;
+
+  function fmtDuration(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const totalH = Math.floor(seconds / 3600);
+    const pad = (n) => String(n).padStart(2, '0');
+    if (useDaysFormat) {
+      return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    return `${pad(totalH)}:${pad(m)}`;
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  // ---- Machine dropdown (populated from /api/machines) ----
+  async function loadMachines() {
+    try {
+      const res = await fetch('/api/machines');
+      const data = await res.json();
+      const sel = $('machineSelect');
+      const opts = ['<option value="">All machines</option>'];
+      (data.machines || []).forEach(m => {
+        opts.push(`<option value="${m.id}">${m.name}${m.code ? ' (' + m.code + ')' : ''}</option>`);
+      });
+      sel.innerHTML = opts.join('');
+    } catch (e) { /* non-fatal */ }
+  }
+
+  // ---- Build the query string from the local filter controls ----
+  function buildSummaryQuery() {
+    const p = new URLSearchParams();
+    const from = $('dateFrom').value;
+    const to = $('dateTo').value;
+    if (from) p.set('date_from', from);
+    if (to) p.set('date_to', to);
+    const shift = $('shiftSelect').value;
+    if (shift) p.set('shift', shift);
+    const sel = $('machineSelect');
+    const ids = Array.from(sel.selectedOptions).map(o => o.value).filter(Boolean);
+    if (ids.length) p.set('machine_ids', ids.join(','));
+    return p.toString();
+  }
+
+  function periodLabel(data) {
+    const f = data.date_from || '—';
+    const t = data.date_to || '—';
+    const sh = data.shift && data.shift !== 'all'
+      ? ` · ${data.shift.charAt(0).toUpperCase() + data.shift.slice(1)} shift` : '';
+    return `Period: ${f} → ${t}${sh}`;
+  }
+
+  function renderCards(totals) {
+    const empty = { running: 0, idle: 0, out_of_order: 0, maintenance: 0 };
+    totals = totals || empty;
+    const cards = [
+      { label: 'Total Run Time',     value: fmtDuration(totals.running),      cls: 'c1' },
+      { label: 'Total Idle Time',    value: fmtDuration(totals.idle),         cls: 'c6' },
+      { label: 'Total Break Down',   value: fmtDuration(totals.out_of_order), cls: 'c2' },
+      { label: 'Total Maintenance',  value: fmtDuration(totals.maintenance),  cls: 'c3' },
+    ];
+    $('totalCards').innerHTML = cards.map(c =>
+      `<div class="card ${c.cls}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`
+    ).join('');
+  }
+
+  async function loadSummary() {
+    const res = await fetch('/api/summary/times?' + buildSummaryQuery());
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    $('periodLabel').textContent = periodLabel(data);
+
+    const machines = data.machines || [];
+    const totals = data.totals || { running: 0, idle: 0, out_of_order: 0, maintenance: 0 };
+
+    renderCards(totals);
+
+    // Machine-wise table
+    $('summaryTable').querySelector('tbody').innerHTML = machines.length
+      ? machines.map(m => `
+        <tr>
+          <td class="strong">${m.machine_name || '—'}</td>
+          <td>${m.machine_code || '—'}</td>
+          <td>${m.group_name || '—'}</td>
+          <td>${m.product_name || '—'}</td>
+          <td class="num"><span class="badge running">${fmtDuration(m.running)}</span></td>
+          <td class="num"><span class="badge idle">${fmtDuration(m.idle)}</span></td>
+          <td class="num"><span class="badge out_of_order">${fmtDuration(m.out_of_order)}</span></td>
+          <td class="num"><span class="badge maintenance">${fmtDuration(m.maintenance)}</span></td>
+          <td class="num strong">${fmtDuration(m.total)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="9" class="empty">No machines found for the selected filters.</td></tr>';
+
+    // Footer totals
+    $('ftRunning').textContent = fmtDuration(totals.running);
+    $('ftIdle').textContent = fmtDuration(totals.idle);
+    $('ftBreak').textContent = fmtDuration(totals.out_of_order);
+    $('ftMaint').textContent = fmtDuration(totals.maintenance);
+    $('ftTotal').textContent = fmtDuration(
+      totals.running + totals.idle + totals.out_of_order + totals.maintenance
+    );
+  }
+
+  async function loadDaywise() {
+    const res = await fetch('/api/summary/daywise?' + buildSummaryQuery());
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    $('periodLabel').textContent = periodLabel(data);
+
+    const days = data.days || [];
+    const totals = data.totals || { running: 0, idle: 0, out_of_order: 0, maintenance: 0 };
+
+    renderCards(totals);
+
+    // Day-wise table (one row per calendar day)
+    $('dayTable').querySelector('tbody').innerHTML = days.length
+      ? days.map(d => `
+        <tr>
+          <td class="strong">${d.date || '—'}</td>
+          <td class="num"><span class="badge running">${fmtDuration(d.running)}</span></td>
+          <td class="num"><span class="badge idle">${fmtDuration(d.idle)}</span></td>
+          <td class="num"><span class="badge out_of_order">${fmtDuration(d.out_of_order)}</span></td>
+          <td class="num"><span class="badge maintenance">${fmtDuration(d.maintenance)}</span></td>
+          <td class="num strong">${fmtDuration(d.total)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="empty">No data found for the selected filters.</td></tr>';
+
+    // Footer totals
+    $('dFtRunning').textContent = fmtDuration(totals.running);
+    $('dFtIdle').textContent = fmtDuration(totals.idle);
+    $('dFtBreak').textContent = fmtDuration(totals.out_of_order);
+    $('dFtMaint').textContent = fmtDuration(totals.maintenance);
+    $('dFtTotal').textContent = fmtDuration(
+      totals.running + totals.idle + totals.out_of_order + totals.maintenance
+    );
+  }
+
+  // ---- View toggle (machine-wise vs day-wise) ----
+  let currentView = 'machine';
+
+  function setView(view) {
+    currentView = view;
+    const isDay = view === 'day';
+    $('machineView').style.display = isDay ? 'none' : '';
+    $('dayView').style.display = isDay ? '' : 'none';
+    $('viewMachineBtn').classList.toggle('active', !isDay);
+    $('viewDayBtn').classList.toggle('active', isDay);
+    $('viewHint').textContent = isDay
+      ? 'Totals per calendar day across all filtered machines.'
+      : 'Per-machine totals over the selected range.';
+  }
+
+  function loadActive() {
+    if (currentView === 'day') loadDaywise();
+    else loadSummary();
+  }
+
+  $('viewMachineBtn').addEventListener('click', () => setView('machine'));
+  $('viewDayBtn').addEventListener('click', () => setView('day'));
+
+  // ---- Time format toggle (HH:MM vs Days) ----
+  function setTimeFormat(useDays) {
+    useDaysFormat = useDays;
+    $('fmtHmBtn').classList.toggle('active', !useDays);
+    $('fmtDaysBtn').classList.toggle('active', useDays);
+    loadActive();  // re-render cards + active table with the new format
+  }
+
+  $('fmtHmBtn').addEventListener('click', () => setTimeFormat(false));
+  $('fmtDaysBtn').addEventListener('click', () => setTimeFormat(true));
+
+  $('applyBtn').addEventListener('click', loadActive);
+  $('resetBtn').addEventListener('click', () => {
+    $('dateFrom').value = '';
+    $('dateTo').value = '';
+    $('shiftSelect').value = '';
+    $('machineSelect').selectedIndex = 0;
+    loadActive();
+  });
+  $('exportBtn').addEventListener('click', () => {
+    const path = currentView === 'day'
+      ? '/api/summary/daywise/export'
+      : '/api/summary/times/export';
+    window.location.href = path + '?' + buildSummaryQuery();
+  });
+
+  // Initial load (defaults to today, all machines, all shifts).
+  loadMachines().then(() => { setView('machine'); loadActive(); });
+</script>
+{% endblock %}

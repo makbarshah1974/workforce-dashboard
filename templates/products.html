@@ -15,7 +15,10 @@
     $('productGrid').innerHTML = data.products.length
       ? data.products.map(p => `
         <div class="card c4">
-          <div class="label">${p.name}</div>
+          <div class="prod-head">
+            <div class="label">${p.name}</div>
+            ${p.group_name ? `<span class="badge group">${p.group_name}</span>` : ''}
+          </div>
           <div class="prod-code">${p.code || '—'}</div>
           <div class="prod-meta">
             <span>Group: <b>${p.group_name || '—'}</b></span>

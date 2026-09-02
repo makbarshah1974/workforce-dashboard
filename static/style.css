@@ -5,13 +5,14 @@
   --bg: #0b1220;
   --bg-2: #243052;
   --surface: #131d36;
-  --surface-2: #25355f;
+  --surface-2: #1b2a50;
   --surface-3: #1f2c4d;
   --border: #243352;
   --text: #e8eefc;
   --muted: #93a4c8;
   --accent: #4f8cff;
   --accent-2: #7c5cff;
+  --accent-rgb: 79,140,255;
   --green: #34d399;
   --red: #f87171;
   --amber: #fbbf24;
@@ -25,45 +26,93 @@
 }
 
 /* ============================================================
+   ACCENT THEME VARIANTS — selectable; apply in BOTH light & dark.
+   Default (:root) is Indigo. Teal / Violet override only the accent.
+   ============================================================ */
+:root.theme-indigo { --accent: #4f8cff; --accent-2: #7c5cff; --accent-rgb: 79,140,255; }
+:root.theme-teal   { --accent: #0d9488; --accent-2: #06b6d4; --accent-rgb: 13,148,136; }
+:root.theme-violet { --accent: #bda7e4; --accent-2: #9256ca; --accent-rgb: 124,58,237; }
+
+/* ============================================================
    LIGHT THEME — applied when <html> has the .light class
    (toggled by the theme button; dark is the default)
    ============================================================ */
 html.light {
-  --bg: #fdf3f5;
-  --bg-2: #f8e6ea;
-  --surface: #fffafb;
-  --surface-2: #fdeef1;
-  --surface-3: #f9e2e7;
-  --border: #f3d9df;
-  --text: #4a2730;
-  --muted: #9a6b76;
-  --accent: #c2415c;
-  --accent-2: #be185d;
+  --bg: #f4eef5;
+  --bg-2: #efdde6;
+  --surface: #f0cdcd;
+  --surface-2: #f7f1f4;
+  --surface-3: #e6bfd6;
+  --border: #e3c6d2;
+  --text: #ac54df;
+  --muted: #64748b;
   --green: #0f9d6b;
-  --red: #d6336c;
-  --amber: #c97a0b;
-  --slate: #9a6b76;
-  --shadow: 0 10px 30px rgba(190, 100, 120, 0.14);
-  --shadow-sm: 0 4px 14px rgba(190, 100, 120, 0.10);
+  --red: #e11d48;
+  --amber: #d97706;
+  --slate: #64748b;
+  --shadow: 0 10px 30px rgba(31, 41, 90, 0.12);
+  --shadow-sm: 0 4px 14px rgba(31, 41, 90, 0.08);
+  /* --accent / --accent-2 / --accent-rgb are inherited from the selected
+     theme variant above, so the chosen color shows in light AND dark. */
 }
 
 /* Light-mode overrides for the Tailwind utility classes used in the chrome */
 html.light body {
-  background: radial-gradient(1200px 600px at 80% -10%, #fbe3e8 0%, var(--bg) 55%) fixed;
+  background: radial-gradient(1200px 600px at 80% -10%, #e3ecff 0%, var(--bg) 55%) fixed;
   color: var(--text);
 }
 html.light .bg-slate-900 { background-color: var(--bg); }
 html.light .text-slate-100 { color: var(--text); }
-html.light .text-slate-300 { color: #7a4a55; }
+html.light .text-slate-300 { color: #475569; }
 html.light .text-slate-400 { color: var(--muted); }
-html.light .bg-slate-800 { background-color: #fffafb; }
-html.light .bg-slate-700 { background-color: #f9e2e7; }
-html.light .bg-slate-600 { background-color: #f3d9df; }
-html.light .border-slate-700 { border-color: #f3d9df; }
-html.light .border-slate-600 { border-color: #f3d9df; }
-html.light .hover\:bg-slate-700:hover { background-color: #f9e2e7; }
-html.light .hover\:bg-slate-600:hover { background-color: #f3d9df; }
-html.light .text-brand-100 { color: #c2415c; }
+html.light .bg-slate-800 { background-color: var(--surface); }
+html.light .bg-slate-700 { background-color: var(--surface-2); }
+html.light .bg-slate-600 { background-color: var(--surface-3); }
+
+/* Light theme — subtle inner bevel / carved effect on cards (color-only) */
+html.light .card,
+html.light .run-card {
+  box-shadow: var(--shadow-sm),
+              inset 0 1px 1px rgba(255, 255, 255, 0.65),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.30);
+}
+html.light .border-slate-700 { border-color: #dbe3f3; }
+html.light .border-slate-600 { border-color: #dbe3f3; }
+html.light .hover\:bg-slate-700:hover { background-color: #eaeffa; }
+html.light .hover\:bg-slate-600:hover { background-color: #e2e9f7; }
+html.light .text-brand-100 { color: var(--accent); }
+
+/* ---- Accent theme swatches (the picker control) ---- */
+.accent-swatches { display: inline-flex; align-items: center; gap: 0.4rem; }
+.accent-swatch {
+  width: 20px; height: 20px; padding: 0; border-radius: 50%;
+  border: 2px solid rgba(100,116,139,0.55); cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.accent-swatch:hover { transform: scale(1.12); }
+.accent-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.accent-swatch[data-accent="indigo"] { background: linear-gradient(135deg,#4f8cff,#7c5cff); }
+.accent-swatch[data-accent="teal"]   { background: linear-gradient(135deg,#0d9488,#06b6d4); }
+.accent-swatch[data-accent="violet"] { background: linear-gradient(135deg,#7c3aed,#a855f7); }
+
+/* ============================================================
+   THEME-AWARE BRAND UTILITIES
+   tailwind.css is a pre-compiled build that bakes `brand-*` colors
+   as literal indigo, so they ignore the --accent variable the picker
+   updates. Re-point the ones the app actually uses at the chosen
+   accent so switching themes recolors rings, borders, brand text and
+   the active states in BOTH light and dark modes. The `html` prefix
+   raises specificity above Tailwind's utilities, so this wins
+   regardless of stylesheet load order. Color-only; no layout change.
+   ============================================================ */
+html .text-brand-100              { color: var(--accent); }
+html .border-brand-500            { border-color: var(--accent); }
+html .hover\:border-brand-500:hover { border-color: var(--accent); }
+html .ring-brand-500              { --tw-ring-color: rgba(var(--accent-rgb), 0.5); }
+html .focus\:ring-brand-500:focus { --tw-ring-color: rgba(var(--accent-rgb), 0.5); }
+html .bg-brand-500                { background-color: var(--accent); }
+html .bg-brand-600                { background-color: var(--accent); }
+html .hover\:bg-brand-700:hover   { background-color: var(--accent); filter: brightness(0.92); }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -121,8 +170,8 @@ h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 }
 .nav-item:hover { background: var(--surface-2); color: var(--text); }
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(79,140,255,0.18), rgba(124,92,255,0.18));
-  color: #fff; border: 1px solid rgba(79,140,255,0.35);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),0.18), rgba(var(--accent-rgb),0.18));
+  color: #fff; border: 1px solid rgba(var(--accent-rgb),0.35);
 }
 .nav-ico { width: 20px; text-align: center; opacity: 0.9; }
 
@@ -178,6 +227,26 @@ h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 .btn.secondary:hover { background: var(--surface-3); }
 .btn.small { padding: 0.4rem 0.8rem; font-size: 0.82rem; }
 
+/* Segmented control (e.g. Machine-wise / Day-wise toggle) */
+.segmented {
+  display: inline-flex; padding: 3px; gap: 3px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.seg-btn {
+  appearance: none; border: 0; cursor: pointer;
+  padding: 0.45rem 0.95rem; font-size: 0.85rem; font-weight: 600;
+  color: var(--muted); background: transparent;
+  border-radius: calc(var(--radius-sm) - 3px);
+  transition: var(--ease);
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: var(--shadow-sm);
+}
+
 .field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
 .field label, .inline { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
 
@@ -192,7 +261,7 @@ h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 }
 .shift-opt input:checked + span {
   background: var(--accent); border-color: var(--accent); color: #fff;
-  box-shadow: 0 2px 10px rgba(59,130,246,0.35);
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb),0.35);
 }
 .shift-opt:hover span { border-color: var(--accent); }
 
@@ -203,7 +272,7 @@ input, select, textarea {
   background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
   font-family: inherit; font-size: 0.9rem; transition: var(--ease);
 }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,140,255,0.18); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18); }
 select option { background: var(--surface-2); }
 textarea { resize: vertical; }
 
@@ -225,7 +294,7 @@ textarea { resize: vertical; }
   padding: 1.1rem 1.2rem; box-shadow: var(--shadow-sm);
   transition: var(--ease); position: relative; overflow: hidden;
 }
-.card:hover { transform: translateY(-2px); border-color: rgba(79,140,255,0.4); filter: brightness(1.08); }
+.card:hover { transform: translateY(-2px); border-color: rgba(var(--accent-rgb),0.4); filter: brightness(1.08); }
 .card .label { color: var(--muted); font-size: 0.82rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
 .card .value { font-size: 1.9rem; font-weight: 800; margin-top: 0.3rem; }
 .card.c1 { border-left: 4px solid var(--green); }
@@ -238,7 +307,7 @@ textarea { resize: vertical; }
  /* ---- KPI cards: clickable with dropdown list ---- */
  /* override .card overflow:hidden so the dropdown can extend below the card */
  .kpi-card { cursor: pointer; user-select: none; overflow: visible; }
- .kpi-card:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79,140,255,0.35); }
+ .kpi-card:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.35); }
  .kpi-card .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
  .kpi-card .kpi-caret { color: var(--muted); font-size: 0.9rem; transition: transform 0.25s ease; flex: 0 0 auto; }
  .kpi-card.open .kpi-caret { transform: rotate(180deg); color: var(--accent); }
@@ -334,15 +403,26 @@ textarea { resize: vertical; }
 }
 table { width: 100%; border-collapse: collapse; min-width: 720px; }
 thead th {
-  text-align: left; padding: 0.85rem 1rem; font-size: 0.78rem;
+  text-align: center; padding: 0.85rem 1rem; font-size: 0.78rem;
   text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
   background: var(--surface-3); position: sticky; top: 0; z-index: 1;
   border-bottom: 1px solid var(--border); white-space: nowrap;
 }
-tbody td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+tbody td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; text-align: center; }
 tbody tr { transition: var(--ease); }
 tbody tr:hover { background: var(--surface-3); }
 tbody tr:last-child td { border-bottom: 0; }
+
+/* ---- Summary table: numeric time columns are centred along with the
+   rest of the table for a consistent layout. The status badge keeps its
+   colour but uses symmetric horizontal padding so it sits centred. ---- */
+#summaryTable th.num,
+#summaryTable td.num { text-align: center; }
+#summaryTable td.num .badge {
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
+#summaryTable tfoot td.num { font-weight: 700; }
 
 .badge {
   display: inline-block; padding: 0.25rem 0.6rem; border-radius: 999px;
@@ -352,6 +432,11 @@ tbody tr:last-child td { border-bottom: 0; }
 .badge.out_of_order { background: rgba(248,113,113,0.16); color: var(--red); }
 .badge.maintenance { background: rgba(251,191,36,0.16); color: var(--amber); }
 .badge.idle { background: rgba(148,163,184,0.16); color: var(--slate); }
+
+/* Group / tag badge (e.g. a product group) and card-title rows that pair a
+   label with a status badge */
+.badge.group { background: rgba(var(--accent-rgb),0.16); color: var(--accent); }
+.kpi-title, .prod-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
 /* ============================================================
    TOOLBAR / FILTERS / PILLS
@@ -423,7 +508,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .modal {
   width: 100%; max-width: 440px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow); overflow: hidden;
+  box-shadow: var(--shadow); overflow: hidden auto; max-height: 92vh;
 }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
 .modal-head h3 { font-size: 1.05rem; }
@@ -451,6 +536,22 @@ tbody tr:last-child td { border-bottom: 0; }
 .auth-card .sub { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.9rem; }
 .auth-card .btn { width: 100%; }
 .hint { color: var(--muted); font-size: 0.78rem; margin-top: 1rem; text-align: center; }
+.auth-logo {
+  height: 2.5rem;   /* small, standard ~40px */
+  width: auto;
+  display: block;
+  background: transparent;
+  border: 0;
+}
+/* Dark mode (default / no .light): put a white background behind the logo,
+   sized to the logo only, so the dark logo outline stays visible on the
+   dark login screen. Light mode keeps the logo on the transparent background. */
+:root:not(.light) .auth-logo {
+  background: #fff;
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+  box-sizing: content-box;
+}
 
 /* ---------- Role selection (step 1 of login) ---------- */
 .role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
@@ -474,7 +575,7 @@ tbody tr:last-child td { border-bottom: 0; }
 /* ---------- Credentials step (step 2 of login) ---------- */
 .role-pill {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  background: rgba(79,140,255,0.14); border: 1px solid var(--accent);
+  background: rgba(var(--accent-rgb),0.14); border: 1px solid var(--accent);
   color: var(--text); font-size: 0.8rem; font-weight: 600;
   padding: 0.3rem 0.4rem 0.3rem 0.8rem; border-radius: 999px; margin-bottom: 1rem;
 }
@@ -554,8 +655,23 @@ tbody tr:last-child td { border-bottom: 0; }
   font-size: 0.9rem; transition: var(--ease); font-family: inherit;
 }
 .field input:focus, .field select:focus {
-  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,140,255,0.18);
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18);
 }
+.field textarea {
+  width: 100%; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  font-size: 0.9rem; transition: var(--ease); font-family: inherit; resize: vertical;
+}
+.field textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18);
+}
+/* Make a field span the full width of the modal's form grid. */
+.form-grid .field-wide { grid-column: 1 / -1; }
+/* The run-edit modal is narrow, so use 2 columns (not the 4-column default)
+   so datetime-local inputs have enough room and nothing gets clipped. */
+.run-edit-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 480px) { .run-edit-grid { grid-template-columns: 1fr; } }
+.form-error { color: var(--red); font-size: 0.82rem; margin: 0 0 0.2rem; }
 
 /* Permission block */
 .perm-block {
@@ -596,17 +712,17 @@ tbody tr:last-child td { border-bottom: 0; }
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
   font-size: 0.85rem; transition: var(--ease);
 }
-.search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,140,255,0.18); }
+.search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18); }
 .users-table { min-width: 760px; }
-.users-table .actions-col { text-align: right; white-space: nowrap; }
-.user-cell { display: flex; align-items: center; gap: 0.6rem; }
+.users-table .actions-col { text-align: center; white-space: nowrap; }
+.user-cell { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
 .avatar.sm { width: 34px; height: 34px; font-size: 0.85rem; }
 .u-name { font-weight: 600; font-size: 0.9rem; }
 .u-sub { color: var(--muted); font-size: 0.76rem; }
 .perm-cell { max-width: 320px; }
 .perm-pill {
   display: inline-block; font-size: 0.7rem; padding: 0.18rem 0.5rem; margin: 0.12rem 0.12rem 0 0;
-  border-radius: 999px; background: rgba(79,140,255,0.12); color: var(--accent); font-weight: 600;
+  border-radius: 999px; background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 600;
 }
 .muted { color: var(--muted); font-size: 0.82rem; }
 
@@ -651,6 +767,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .bulk-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
 .bulk-name { font-weight: 600; flex: 1; }
 .bulk-group { color: var(--muted); font-size: 0.8rem; }
+.bulk-product { color: var(--muted); font-size: 0.8rem; }
 #permModal[style*="flex"] { display: flex; }
 
 /* ============================================================

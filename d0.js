@@ -97,7 +97,7 @@
         <li>
           <span class="feed-dot" style="background:${STATUS_META[l.status]?.color || '#94a3b8'}"></span>
           <div class="feed-body">
-            <span class="feed-title">${l.machine_name || 'Machine'} → ${STATUS_META[l.status]?.label || l.status}</span>
+            <span class="feed-title">${l.machine_name || 'Machine'}${l.product_name ? ' · ' + l.product_name : ''} → ${STATUS_META[l.status]?.label || l.status}</span>
             <span class="feed-meta">${l.updated_by || '—'} · ${fmtTime(l.timestamp)}</span>
           </div>
         </li>`).join('')
@@ -160,6 +160,7 @@
     return '<ul class="kpi-list">' + items.map(it => `
       <li class="kpi-li">
         <span class="kpi-li-main">${it.name || it.code || '—'}</span>
+        ${it.product_name ? `<span class="kpi-li-sub">${it.product_name}</span>` : ''}
       </li>`).join('') + '</ul>';
   }
 

@@ -4,6 +4,20 @@
 {% block page_title %}Production Run Console{% endblock %}
 
 {% block content %}
+  <!-- ============ BULK MACHINE ACTIONS ============ -->
+  {% if user_can('entry') %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Machine Bulk Actions</h2>
+      <span class="muted">Start or stop many machines at once</span>
+    </div>
+    <div class="bulk-actions">
+      <button class="btn small" id="bulkStartBtn">▶ Start All Machines</button>
+      <button class="btn small secondary" id="bulkStopBtn">■ Stop All Machines</button>
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ============ PLUG & PLAY START CONSOLE ============ -->
   <section class="panel">
     <div class="panel-head">
@@ -75,6 +89,46 @@
       <tbody></tbody>
     </table>
   </div>
+
+  <!-- Bulk status update modal (any user with entry-page access) -->
+  <div class="modal-overlay" id="bulkModalOverlay">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h3 id="bulkModalTitle">Update Machines</h3>
+        <button class="modal-close" id="bulkModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="bulk-controls">
+          <div class="field">
+            <label>Set Status</label>
+            <select id="bulkStatus">
+              <option value="running">Running</option>
+              <option value="idle">Idle</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="out_of_order">Break Down</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Shift</label>
+            <select id="bulkShift">
+              <option value="">Keep current</option>
+              <option value="day">Day Shift</option>
+              <option value="night">Night Shift</option>
+            </select>
+          </div>
+          <div class="field bulk-select-all">
+            <label><input type="checkbox" id="bulkSelectAll" /> Select / deselect all</label>
+          </div>
+        </div>
+        <p class="modal-meta">Tick the machines you want to update, then submit to change them all at once. Production runs are updated automatically.</p>
+        <div class="bulk-machine-list" id="bulkMachineList"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary" id="bulkModalCancel">Cancel</button>
+        <button class="btn" id="bulkModalSubmit">Submit Updates</button>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block scripts %}
@@ -99,12 +153,15 @@
     return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
   }
   function statusBadge(status) {
-    const meta = { running:{label:'Running',color:'#34d399'}, out_of_order:{label:'Break Down',color:'#f87171'}, maintenance:{label:'Maintenance',color:'#fbbf24'}, idle:{label:'Idle',color:'#94a3b8'} }[status] || { label: status, color: '#94a3b8' };
-    return `<span class="badge ${status}" style="background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55;">${meta.label}</span>`;
+    const label = { running:'Running', out_of_order:'Break Down', maintenance:'Maintenance', idle:'Idle' }[status] || status;
+    return `<span class="badge ${status}">${label}</span>`;
   }
   function machineStatusOf(id) {
     const m = machines.find(x => String(x.id) === String(id));
     return m ? m.status : 'idle';
+  }
+  function machineOf(id) {
+    return machines.find(x => String(x.id) === String(id));
   }
 
   async function loadAll() {
@@ -164,26 +221,30 @@
   function renderActive() {
     const active = runs.filter(r => r.status === 'running');
     $('activeGrid').innerHTML = active.length
-      ? active.map(r => `
+      ? active.map(r => {
+          const m = machineOf(r.machine_id);
+          const groupName = r.group_name || (m && m.group_name) || '—';
+          const productName = r.product_name || (m && m.product_name) || '—';
+          return `
         <div class="run-card running" data-id="${r.id}">
           <div class="rc-top">
             <div>
               <div class="rc-name">${r.machine_name || 'Machine'}</div>
               <div class="mc-code">${r.item_name || '—'} ${r.item_code ? '· ' + r.item_code : ''}</div>
             </div>
-            <span class="badge running">Running</span>
             ${statusBadge(machineStatusOf(r.machine_id))}
           </div>
           <div class="rc-meta">
-            <span>Group: <b>${r.group_name || '—'}</b></span>
-            <span>Product: <b>${r.product_name || '—'}</b></span>
+            <span>Group: <b>${groupName}</b></span>
+            <span>Product: <b>${productName}</b></span>
             <span>Operator: <b>${r.operator || '—'}</b></span>
           </div>
           <div class="rc-foot">
             <span class="run-timer" data-start="${r.started_at}">00:00:00</span>
             <button class="btn small stop-btn" data-id="${r.id}">■ Stop</button>
           </div>
-        </div>`).join('')
+        </div>`;
+        }).join('')
       : '<div class="empty">No active runs. Start one above.</div>';
 
     document.querySelectorAll('.stop-btn').forEach(b =>
@@ -194,12 +255,16 @@
   function renderTable() {
     const recent = runs.filter(r => r.status !== 'running').slice(0, 25);
     $('runTable').querySelector('tbody').innerHTML = recent.length
-      ? recent.map(r => `
+      ? recent.map(r => {
+          const m = machineOf(r.machine_id);
+          const groupName = r.group_name || (m && m.group_name) || '—';
+          const productName = r.product_name || (m && m.product_name) || '—';
+          return `
         <tr>
           <td>${fmtTime(r.started_at)}</td>
           <td class="strong">${r.machine_name || '—'}</td>
-          <td>${r.group_name || '—'}</td>
-          <td>${r.product_name || '—'}</td>
+          <td>${groupName}</td>
+          <td>${productName}</td>
           <td>${r.item_name || '—'}</td>
           <td>${r.item_code || '—'}</td>
           <td>${r.operator || '—'}</td>
@@ -207,7 +272,8 @@
           <td>${statusBadge(machineStatusOf(r.machine_id))}</td>
           <td><span class="badge stopped">Stopped</span></td>
           <td>${r.note || ''}</td>
-        </tr>`).join('')
+        </tr>`;
+        }).join('')
       : '<tr><td colspan="11" class="empty">No runs yet.</td></tr>';
   }
 
@@ -263,5 +329,84 @@
 
   // Global date + shift filter: re-fetch runs + machines on change.
   window.addEventListener('wf:filter-changed', () => loadAll());
+
+  // ---- Bulk start / stop all machines ----
+  // Both "Start All" and "Stop All" open the SAME bulk-update form: pick the
+  // status, shift and the machines (via checkboxes), then submit to update
+  // them all at once. Production runs are updated automatically on submit.
+  const STATUS_META = {
+    running:      { label: 'Running',      color: '#34d399' },
+    out_of_order: { label: 'Break Down', color: '#f87171' },
+    maintenance:  { label: 'Maintenance',  color: '#fbbf24' },
+    idle:         { label: 'Idle',         color: '#94a3b8' },
+  };
+
+  function openBulkModal(mode) {
+    renderBulkList();
+    $('bulkSelectAll').checked = false;
+    if (mode === 'stop') {
+      $('bulkModalTitle').textContent = 'Stop Machines';
+      $('bulkStatus').value = 'idle';
+      // Pre-select currently running machines for convenience.
+      document.querySelectorAll('.bulk-check').forEach(c => {
+        const m = machines.find(x => x.id === parseInt(c.value, 10));
+        c.checked = !!(m && m.status === 'running');
+      });
+    } else {
+      $('bulkModalTitle').textContent = 'Start Machines';
+      $('bulkStatus').value = 'running';
+      // "Start All" → pre-select every machine so the button name is truthful.
+      document.querySelectorAll('.bulk-check').forEach(c => { c.checked = true; });
+      $('bulkSelectAll').checked = true;
+    }
+    $('bulkModalOverlay').classList.add('show');
+  }
+  function closeBulkModal() { $('bulkModalOverlay').classList.remove('show'); }
+
+  function renderBulkList() {
+    const list = machines;
+    $('bulkMachineList').innerHTML = list.map(m => `
+      <label class="bulk-row">
+        <input type="checkbox" class="bulk-check" value="${m.id}" />
+        <span class="bulk-name">${m.name}</span>
+        <span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span>
+        <span class="bulk-product">${m.product_name || '—'}</span>
+      </label>`).join('');
+  }
+
+  async function submitBulkUpdate() {
+    const checked = Array.from(document.querySelectorAll('.bulk-check:checked')).map(c => parseInt(c.value, 10));
+    if (!checked.length) { showToast('Select at least one machine'); return; }
+    const payload = {
+      status: $('bulkStatus').value,
+      shift: $('bulkShift').value || null,
+      machine_ids: checked,
+      update_runs: true,
+    };
+    const res = await fetch('/api/machines/bulk_update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast(`Updated ${data.updated || 0} machine(s)`);
+      closeBulkModal();
+      broadcastMachineChange();
+      loadAll();
+    } else {
+      showToast(data.error || 'Bulk update failed');
+    }
+  }
+
+  $('bulkStartBtn').addEventListener('click', () => openBulkModal('start'));
+  $('bulkStopBtn').addEventListener('click', () => openBulkModal('stop'));
+  $('bulkModalClose').addEventListener('click', closeBulkModal);
+  $('bulkModalCancel').addEventListener('click', closeBulkModal);
+  $('bulkModalSubmit').addEventListener('click', submitBulkUpdate);
+  $('bulkModalOverlay').addEventListener('click', (e) => { if (e.target === $('bulkModalOverlay')) closeBulkModal(); });
+  $('bulkSelectAll').addEventListener('change', (e) => {
+    document.querySelectorAll('.bulk-check').forEach(c => { c.checked = e.target.checked; });
+  });
 </script>
 {% endblock %}

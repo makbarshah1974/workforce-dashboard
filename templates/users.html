@@ -26,10 +26,13 @@
         </div>
         <div class="field">
           <label for="role">Role</label>
-          <select id="role">
+          <select id="role" onchange="applyRoleDefaults()">
             <option value="operator">Operator</option>
             <option value="supervisor">Supervisor</option>
-            <option value="admin">Admin</option>
+            <option value="general_manager">General Manager</option>
+            <option value="operation_manager">Operation Manager</option>
+            <option value="production_manager">Production Manager</option>
+            <option value="admin">Administrator</option>
           </select>
         </div>
         <div class="field">
@@ -127,9 +130,24 @@
     renderUsers();
   }
 
+  const ROLE_LABELS = {
+    admin: "Administrator",
+    general_manager: "General Manager",
+    operation_manager: "Operation Manager",
+    production_manager: "Production Manager",
+    supervisor: "Supervisor",
+    operator: "Operator",
+    viewer: "Viewer",
+  };
+
   function roleBadge(role) {
-    const cls = role === "admin" ? "badge-admin" : role === "supervisor" ? "badge-sup" : "badge-op";
-    return `<span class="badge ${cls}">${role}</span>`;
+    const label = ROLE_LABELS[role] || role;
+    const cls = role === "admin" ? "badge-admin"
+              : (role === "supervisor" || role === "general_manager"
+                 || role === "operation_manager" || role === "production_manager")
+                 ? "badge-sup"
+              : "badge-op";
+    return `<span class="badge ${cls}">${label}</span>`;
   }
 
   function statusBadge(active) {
@@ -172,6 +190,7 @@
         <td class="actions-col">
           <button class="icon-btn" title="Edit" onclick="editUser(${u.id})">✎</button>
           <button class="icon-btn" title="Access" onclick="openPermModal(${u.id})">🔐</button>
+          <button class="icon-btn" title="Activity" onclick="viewActivity(${u.id})">📜</button>
           <button class="icon-btn danger" title="Delete" onclick="deleteUser(${u.id})">🗑</button>
         </td>
       </tr>
@@ -187,6 +206,24 @@
     document.querySelectorAll(".perm-cb").forEach(cb => cb.checked = on);
   }
 
+  // Default page permissions per role, provided by the server (ROLE_DEFAULTS,
+  // derived from default_permissions() in app.py) so the client stays in sync
+  // automatically when a page or role default changes.
+  const ROLE_DEFAULTS = {{ ROLE_DEFAULTS | tojson }};
+
+  // Automatically set the Page Access Control checkboxes to the selected
+  // role's default permissions. Admins/managers get every page by default;
+  // the admin can still fine-tune with the toggles or Allow/Restrict All.
+  function applyRoleDefaults() {
+    const role = document.getElementById("role").value;
+    const defs = ROLE_DEFAULTS[role] || ROLE_DEFAULTS["operator"];
+    setAllPerms(false);
+    defs.forEach(p => {
+      const cb = document.querySelector('.perm-cb[value="' + p + '"]');
+      if (cb) cb.checked = true;
+    });
+  }
+
   function resetForm() {
     document.getElementById("editId").value = "";
     document.getElementById("username").value = "";
@@ -194,7 +231,7 @@
     document.getElementById("role").value = "operator";
     document.getElementById("password").value = "";
     document.getElementById("is_active").checked = true;
-    setAllPerms(true);
+    applyRoleDefaults();
     document.getElementById("formTitle").textContent = "Add New User";
     document.getElementById("saveBtn").textContent = "Create User";
     document.getElementById("resetFormBtn").style.display = "none";
@@ -271,6 +308,13 @@
     }
   });
 
+  // ---- View activity (audit trail) ----
+  function viewActivity(id) {
+    const u = users.find(x => x.id === id);
+    const name = u ? (u.display_name || u.username) : "";
+    window.open("/audit?user=" + encodeURIComponent(name), "_blank");
+  }
+
   // ---- Delete ----
   async function deleteUser(id) {
     const u = users.find(x => x.id === id);
@@ -329,6 +373,7 @@
     if (e.target.id === "permModal") closePermModal();
   });
 
+  applyRoleDefaults();
   loadUsers();
 </script>
 {% endblock %}

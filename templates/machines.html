@@ -15,12 +15,6 @@
       </select>
       <input type="search" id="searchBox" placeholder="Search machine…" />
     </div>
-    {% if user and user.role in ('admin', 'supervisor') %}
-    <div class="bulk-actions">
-      <button class="btn small" id="bulkStartBtn">▶ Start All Machines</button>
-      <button class="btn small secondary" id="bulkStopBtn">■ Stop All Machines</button>
-    </div>
-    {% endif %}
     <div class="summary-pills" id="summaryPills"></div>
   </div>
 
@@ -116,45 +110,6 @@
     </div>
   </div>
 
-  <!-- Bulk status update modal (admin / supervisor) -->
-  <div class="modal-overlay" id="bulkModalOverlay">
-    <div class="modal modal-wide">
-      <div class="modal-head">
-        <h3 id="bulkModalTitle">Update Machines</h3>
-        <button class="modal-close" id="bulkModalClose">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="bulk-controls">
-          <div class="field">
-            <label>Set Status</label>
-            <select id="bulkStatus">
-              <option value="running">Running</option>
-              <option value="idle">Idle</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="out_of_order">Break Down</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Shift</label>
-            <select id="bulkShift">
-              <option value="">Keep current</option>
-              <option value="day">Day Shift</option>
-              <option value="night">Night Shift</option>
-            </select>
-          </div>
-          <div class="field bulk-select-all">
-            <label><input type="checkbox" id="bulkSelectAll" /> Select / deselect all</label>
-          </div>
-        </div>
-        <p class="modal-meta">Tick the machines you want to update, then submit to change them all at once. Production runs are updated automatically.</p>
-        <div class="bulk-machine-list" id="bulkMachineList"></div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn secondary" id="bulkModalCancel">Cancel</button>
-        <button class="btn" id="bulkModalSubmit">Submit Updates</button>
-      </div>
-    </div>
-  </div>
 {% endblock %}
 
 {% block scripts %}
@@ -166,9 +121,15 @@
     idle:         { label: 'Idle',         color: '#94a3b8' },
   };
 
+  // Whether the current user may create/update entries (start/stop runs,
+  // change machine status, edit shift hours). Set from the server so the
+  // controls above are simply not rendered for roles without entry access.
+  const canEntry = {{ 'true' if user_can('entry') else 'false' }};
+
   let machines = [];
   let currentId = null;
   let runningIds = new Set();
+  let runByMachine = new Map();  // machine_id -> active run id
 
   function fmtTime(iso) {
     if (!iso) return '—';
@@ -187,6 +148,7 @@
     const rData = await rRes.json();
     machines = mData.machines;
     runningIds = new Set((rData.runs || []).map(r => r.machine_id));
+    runByMachine = new Map((rData.runs || []).map(r => [r.machine_id, r.id]));
     render();
   }
 
@@ -226,11 +188,11 @@
           <div class="mc-foot">
             <span class="mc-updated">${m.updated_by || '—'} · ${fmtTime(m.updated_at)}</span>
             <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-              ${runningIds.has(m.id)
-                ? `<button class="btn small run-stop" data-id="${m.id}">■ Stop</button>`
-                : `<button class="btn small run-start" data-id="${m.id}">▶ Start</button>`}
-              <button class="btn small" data-id="${m.id}">Update</button>
-              <button class="btn small sh-edit" data-id="${m.id}">Edit Hours</button>
+              ${canEntry ? (runningIds.has(m.id)
+                ? `<button class="btn small run-stop" data-id="${runByMachine.get(m.id)}">■ Stop</button>`
+                : `<button class="btn small run-start" data-id="${m.id}">▶ Start</button>`) : ''}
+              ${canEntry ? `<button class="btn small" data-id="${m.id}">Update</button>` : ''}
+              ${canEntry ? `<button class="btn small sh-edit" data-id="${m.id}">Edit Hours</button>` : ''}
             </div>
           </div>
         </div>`).join('')
@@ -369,81 +331,6 @@
     if (btn) { e.stopPropagation(); openShModal(parseInt(btn.dataset.id, 10)); }
   });
 
-  // ---- Bulk start / stop all machines ----
-  // Both "Start All" and "Stop All" open the SAME bulk-update form: pick the
-  // status, shift and the machines (via checkboxes), then submit to update
-  // them all at once. Production runs are updated automatically on submit.
-  function openBulkModal(mode) {
-    renderBulkList();
-    $('bulkSelectAll').checked = false;
-    if (mode === 'stop') {
-      $('bulkModalTitle').textContent = 'Stop Machines';
-      $('bulkStatus').value = 'idle';
-      // Pre-select currently running machines for convenience.
-      document.querySelectorAll('.bulk-check').forEach(c => {
-        const m = machines.find(x => x.id === parseInt(c.value, 10));
-        c.checked = !!(m && m.status === 'running');
-      });
-    } else {
-      $('bulkModalTitle').textContent = 'Start Machines';
-      $('bulkStatus').value = 'running';
-      // "Start All" → pre-select every machine so the button name is truthful.
-      document.querySelectorAll('.bulk-check').forEach(c => { c.checked = true; });
-      $('bulkSelectAll').checked = true;
-    }
-    $('bulkModalOverlay').classList.add('show');
-  }
-  function closeBulkModal() { $('bulkModalOverlay').classList.remove('show'); }
-
-  function renderBulkList() {
-    const q = ($('searchBox') ? $('searchBox').value : '').trim().toLowerCase();
-    const list = machines.filter(m =>
-      !q || m.name.toLowerCase().includes(q) || (m.code || '').toLowerCase().includes(q)
-    );
-    $('bulkMachineList').innerHTML = list.map(m => `
-      <label class="bulk-row">
-        <input type="checkbox" class="bulk-check" value="${m.id}" />
-        <span class="bulk-name">${m.name}</span>
-        <span class="badge ${m.status}">${STATUS_META[m.status]?.label || m.status}</span>
-        <span class="bulk-group">${m.group_name || '—'}</span>
-      </label>`).join('');
-  }
-
-  async function submitBulkUpdate() {
-    const checked = Array.from(document.querySelectorAll('.bulk-check:checked')).map(c => parseInt(c.value, 10));
-    if (!checked.length) { showToast('Select at least one machine'); return; }
-    const payload = {
-      status: $('bulkStatus').value,
-      shift: $('bulkShift').value || null,
-      machine_ids: checked,
-      update_runs: true,
-    };
-    const res = await fetch('/api/machines/bulk_update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      showToast(`Updated ${data.updated || 0} machine(s)`);
-      closeBulkModal();
-      broadcastMachineChange();
-      loadMachines();
-    } else {
-      showToast(data.error || 'Bulk update failed');
-    }
-  }
-
-  $('bulkStartBtn').addEventListener('click', () => openBulkModal('start'));
-  $('bulkStopBtn').addEventListener('click', () => openBulkModal('stop'));
-  $('bulkModalClose').addEventListener('click', closeBulkModal);
-  $('bulkModalCancel').addEventListener('click', closeBulkModal);
-  $('bulkModalSubmit').addEventListener('click', submitBulkUpdate);
-  $('bulkModalOverlay').addEventListener('click', (e) => { if (e.target === $('bulkModalOverlay')) closeBulkModal(); });
-  $('bulkSelectAll').addEventListener('change', (e) => {
-    document.querySelectorAll('.bulk-check').forEach(c => { c.checked = e.target.checked; });
-  });
-  $('searchBox').addEventListener('input', () => { if ($('bulkModalOverlay').classList.contains('show')) renderBulkList(); });
 
   loadMachines();
 

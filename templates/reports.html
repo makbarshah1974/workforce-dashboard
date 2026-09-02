@@ -35,7 +35,7 @@
   <div class="table-wrap">
     <table id="reportTable">
       <thead>
-        <tr><th>Time</th><th>Machine</th><th>From</th><th>To</th><th>Shift</th><th>By</th><th>Note</th></tr>
+        <tr><th>Time</th><th>Machine</th><th>Product</th><th>From</th><th>To</th><th>Shift</th><th>Duration</th><th>By</th><th>Note</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -56,6 +56,16 @@
     if (isNaN(d)) return '—';
     const pad = (n) => String(n).padStart(2, '0');
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fmtDur(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    if (h) return `${h}h ${pad(m)}m`;
+    if (m) return `${m}m ${pad(s)}s`;
+    return `${s}s`;
   }
   function params() {
     const p = new URLSearchParams();
@@ -79,13 +89,16 @@
     const events = data.events || [];
 
     const summary = data.summary || {};
-    const summaryRows = Object.entries(summary)
+    const statusTotals = data.status_totals || {};
+    const totalRows = Object.entries(statusTotals)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
     const kpis = [
       { label: 'Total Changes', value: data.count || 0, cls: 'accent' },
-      ...summaryRows.map(([k, v], i) => ({
-        label: k, value: v, cls: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'][i % 6]
+      ...totalRows.map(([k, v], i) => ({
+        label: (STATUS_META[k]?.label || k) + ' Time',
+        value: fmtDur(v),
+        cls: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'][i % 6]
       })),
     ];
     $('reportKpis').innerHTML = kpis.map(k =>
@@ -97,13 +110,15 @@
         <tr>
           <td>${fmtTime(l.timestamp)}</td>
           <td class="strong">${l.machine_name || '—'}${l.machine_code ? ' · ' + l.machine_code : ''}</td>
+          <td>${l.product_name || '—'}</td>
           <td><span class="badge ${l.from_status || ''}">${STATUS_META[l.from_status]?.label || l.from_status || '—'}</span></td>
           <td><span class="badge ${l.to_status}">${STATUS_META[l.to_status]?.label || l.to_status}</span></td>
           <td>${l.shift ? (l.shift.charAt(0).toUpperCase() + l.shift.slice(1)) : '—'}</td>
+          <td>${l.duration_seconds != null ? fmtDur(l.duration_seconds) : '—'}</td>
           <td>${l.updated_by || '—'}</td>
           <td>${l.note || '—'}</td>
         </tr>`).join('')
-      : '<tr><td colspan="7" class="empty">No records in range.</td></tr>';
+      : '<tr><td colspan="9" class="empty">No records in range.</td></tr>';
   }
   const $ = (id) => document.getElementById(id);
 
