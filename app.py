@@ -39,6 +39,28 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
+# --- Session cookie hardening + proxy fix for Render/mobile ---
+# Render terminates TLS and forwards via X-Forwarded-Proto; Flask must
+# trust that header or request.is_secure is wrong and Secure cookies break.
+try:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+except Exception:
+    pass
+
+# Secure cookies only when served over HTTPS (Render / production DB).
+# On plain HTTP LAN (http://192.168.x.x:5000) Secure must be False or
+# the session cookie is silently dropped by the browser.
+_is_https_env = bool(os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_URL"))
+_db_url_for_cookie = os.environ.get("DATABASE_URL", "")
+_is_prod_db = _db_url_for_cookie.startswith("postgres://") or _db_url_for_cookie.startswith("postgresql://")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=(_is_https_env or _is_prod_db),
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+)
+
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///workforce.db")
 # SQLAlchemy needs postgresql:// (not postgres://) on newer versions
 if DATABASE_URL.startswith("postgres://"):
@@ -56,6 +78,32 @@ PORT = int(os.environ.get("PORT", 5000))
 DEBUG = os.environ.get("DEBUG", "False").strip().lower() in ("1", "true", "yes", "on")
 
 db = SQLAlchemy(app)
+
+
+# ---------------------------------------------------------------------------
+# Cache control — fixes "works only in incognito" on mobile
+# Mobile Chrome aggressively caches 302 redirects and HTML. Without
+# no-store, normal tabs can loop on a cached / -> /login redirect or
+# show a stale /login after you've already logged in. API must never be cached.
+# ---------------------------------------------------------------------------
+_NO_STORE_PATHS = {"/", "/login", "/dashboard", "/summary", "/machines", "/products", "/groups", "/reports", "/entry", "/workforce", "/runs", "/audit", "/users", "/logout"}
+
+
+@app.after_request
+def _add_cache_headers(resp):
+    try:
+        p = request.path or ""
+        if p.startswith("/api/") or p in _NO_STORE_PATHS:
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+        elif p.startswith("/static/"):
+            # Static assets are versioned via ?v=5 so a short cache is fine.
+            # Must override Flask's default "no-cache" for static files.
+            resp.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+    except Exception:
+        pass
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -689,6 +737,7 @@ def login():
                 session["username"] = user.username
                 session["display_name"] = user.display_name or user.username
                 session["role"] = user.role
+                session.permanent = True
                 audit_log("login", entity_type="user", entity_id=user.id,
                           description=f"User '{user.username}' logged in",
                           actor=user.display_name or user.username, commit=True)

@@ -22,7 +22,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: >-
       python -c "from wsgi import init_db; init_db()" &&
-      gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
+      gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120 --forwarded-allow-ips="*"
     healthCheckPath: /login
     autoDeploy: true
     envVars:
@@ -39,3 +39,6 @@ services:
       # Render exposes its PORT automatically; set the app's expected port.
       - key: PORT
         value: 10000
+      # Tells Flask it is behind HTTPS so Secure session cookies work on mobile.
+      - key: RENDER
+        value: true

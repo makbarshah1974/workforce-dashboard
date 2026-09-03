@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>{% block title %}Workforce Dashboard{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5" />
@@ -299,6 +302,25 @@
     function broadcastMachineChange() {
       window.dispatchEvent(new CustomEvent('wf:machines-changed'));
     }
+
+    // One-time kill of any stale Service Worker / CacheStorage that may
+    // have been registered by a previous deploy. Normal tabs keep SW/cache
+    // across reloads (incognito does not), so a ghost SW causes "works only
+    // in incognito". Safe to run every load.
+    (function () {
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          });
+        }
+      } catch (e) {}
+    })();
   </script>
   {% block scripts %}{% endblock %}
 </body>

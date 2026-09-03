@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>{% block title %}Workforce Dashboard{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5" />
@@ -88,6 +91,20 @@
           b.classList.toggle('active', b.dataset.accent === active);
         });
       })();
+    })();
+
+    // Kill any stale SW / CacheStorage (see base.html).
+    (function () {
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) { keys.forEach(function (k) { caches.delete(k); }); });
+        }
+      } catch (e) {}
     })();
   </script>
 </body>
