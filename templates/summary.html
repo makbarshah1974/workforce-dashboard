@@ -9,9 +9,7 @@
       <!-- Machine filter -->
       <div class="flex items-center gap-2">
         <label class="text-sm text-slate-400">Machine</label>
-        <select id="machineSelect" multiple size="1" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500 min-w-[180px]">
-          <option value="">All machines</option>
-        </select>
+        <div id="machineCheckWrap" class="relative"><button type="button" id="machineCheckBtn" class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 flex items-center gap-2"><span id="machineCheckLabel">All machines</span> <span class="text-slate-400">&#9662;</span></button><div id="machineCheckDrop" class="hidden absolute z-40 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg p-2 min-w-[220px] max-h-[260px] overflow-auto"><label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" value="" id="machineCheckAll" checked> All machines</label><div id="machineCheckList"></div></div></div>
       </div>
 
       <!-- Date range -->
@@ -147,21 +145,52 @@
 
   const $ = (id) => document.getElementById(id);
 
-  // ---- Machine dropdown (populated from /api/machines) ----
+  // ---- Machine checkbox dropdown (responsive, replaces broken multiple size=1) ----
   async function loadMachines() {
     try {
       const res = await fetch('/api/machines');
       const data = await res.json();
-      const sel = $('machineSelect');
-      const opts = ['<option value="">All machines</option>'];
-      (data.machines || []).forEach(m => {
-        opts.push(`<option value="${m.id}">${m.name}${m.code ? ' (' + m.code + ')' : ''}</option>`);
-      });
-      sel.innerHTML = opts.join('');
-    } catch (e) { /* non-fatal */ }
+      const list = document.getElementById('machineCheckList');
+      if (list) {
+        list.innerHTML = (data.machines || []).map(m =>
+          `<label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" value="${m.id}" class="machine-check-item"> ${m.name}${m.code ? ' ('+m.code+')' : ''}</label>`
+        ).join('');
+        list.querySelectorAll('.machine-check-item').forEach(cb => cb.addEventListener('change', () => syncCheckLabel()));
+        const all = document.getElementById('machineCheckAll');
+        if (all) all.addEventListener('change', () => {
+          if (all.checked) list.querySelectorAll('.machine-check-item').forEach(cb => cb.checked = true);
+          syncCheckLabel();
+        });
+        const btn = document.getElementById('machineCheckBtn');
+        const drop = document.getElementById('machineCheckDrop');
+        if (btn && drop) {
+          btn.addEventListener('click', () => drop.classList.toggle('hidden'));
+          document.addEventListener('click', (e) => { if (!e.target.closest('#machineCheckWrap')) drop.classList.add('hidden'); });
+        }
+        syncCheckLabel();
+      }
+    } catch (e) {}
   }
-
-  // ---- Build the query string from the local filter controls ----
+  function getSelectedMachineIds() {
+    const all = document.getElementById('machineCheckAll');
+    const items = Array.from(document.querySelectorAll('.machine-check-item:checked')).map(cb => cb.value);
+    if (!items.length || (all && all.checked)) return [];
+    return items;
+  }
+  function syncCheckLabel() {
+    const label = document.getElementById('machineCheckLabel');
+    const all = document.getElementById('machineCheckAll');
+    const items = Array.from(document.querySelectorAll('.machine-check-item:checked'));
+    if (!items.length || (all && all.checked)) {
+      if (label) label.textContent = 'All machines';
+      if (all) all.checked = true;
+    } else {
+      if (all) all.checked = false;
+      if (label) label.textContent = items.length + ' selected';
+    }
+  }
+  let committedQuery = '';
+  function snapshotCommitted() { committedQuery = buildSummaryQuery(); return committedQuery; }
   function buildSummaryQuery() {
     const p = new URLSearchParams();
     const from = $('dateFrom').value;
@@ -170,8 +199,7 @@
     if (to) p.set('date_to', to);
     const shift = $('shiftSelect').value;
     if (shift) p.set('shift', shift);
-    const sel = $('machineSelect');
-    const ids = Array.from(sel.selectedOptions).map(o => o.value).filter(Boolean);
+    const ids = getSelectedMachineIds();
     if (ids.length) p.set('machine_ids', ids.join(','));
     return p.toString();
   }
@@ -198,8 +226,12 @@
     ).join('');
   }
 
+  let _summaryAbort=null;
   async function loadSummary() {
-    const res = await fetch('/api/summary/times?' + buildSummaryQuery());
+    const q = committedQuery || buildSummaryQuery();
+    try{ if(_summaryAbort) _summaryAbort.abort(); }catch(e){}
+    _summaryAbort=new AbortController();
+    let res; try{ res = await fetch('/api/summary/times?' + q, {cache:'no-store', signal:_summaryAbort.signal}); }catch(e){ if(e.name==='AbortError') return; throw e; }
     const data = await res.json();
     if (data.error) { showToast(data.error, 'error'); return; }
 
@@ -236,8 +268,12 @@
     );
   }
 
+  let _daywiseAbort=null;
   async function loadDaywise() {
-    const res = await fetch('/api/summary/daywise?' + buildSummaryQuery());
+    const q = committedQuery || buildSummaryQuery();
+    try{ if(_daywiseAbort) _daywiseAbort.abort(); }catch(e){}
+    _daywiseAbort=new AbortController();
+    let res; try{ res = await fetch('/api/summary/daywise?' + q, {cache:'no-store', signal:_daywiseAbort.signal}); }catch(e){ if(e.name==='AbortError') return; throw e; }
     const data = await res.json();
     if (data.error) { showToast(data.error, 'error'); return; }
 
@@ -305,22 +341,30 @@
   $('fmtHmBtn').addEventListener('click', () => setTimeFormat(false));
   $('fmtDaysBtn').addEventListener('click', () => setTimeFormat(true));
 
-  $('applyBtn').addEventListener('click', loadActive);
+  $('applyBtn').addEventListener('click', () => { snapshotCommitted(); loadActive(); });
   $('resetBtn').addEventListener('click', () => {
     $('dateFrom').value = '';
     $('dateTo').value = '';
     $('shiftSelect').value = '';
-    $('machineSelect').selectedIndex = 0;
-    loadActive();
+    const all = document.getElementById('machineCheckAll');
+    if (all) { all.checked = true; document.querySelectorAll('.machine-check-item').forEach(cb => cb.checked = true); syncCheckLabel(); }
+    snapshotCommitted(); loadActive();
   });
   $('exportBtn').addEventListener('click', () => {
     const path = currentView === 'day'
       ? '/api/summary/daywise/export'
       : '/api/summary/times/export';
-    window.location.href = path + '?' + buildSummaryQuery();
+    window.location.href = path + '?' + (committedQuery || buildSummaryQuery());
   });
 
+  // 3s committed poll — skip if user is typing in filter or tab hidden
+  function _summaryShouldPoll(){ if(document.hidden) return false; if(document.activeElement && document.activeElement.closest && document.activeElement.closest('#machineCheckWrap, input, select')) return false; return true; }
+  let _summaryTimer=null;
+  function startSummaryPoll(){ if(_summaryTimer) clearInterval(_summaryTimer); _summaryTimer=setInterval(()=>{ if(_summaryShouldPoll()) loadActive(); },3000); }
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearInterval(_summaryTimer); _summaryTimer=null; } else startSummaryPoll(); });
+
   // Initial load (defaults to today, all machines, all shifts).
-  loadMachines().then(() => { setView('machine'); loadActive(); });
+  loadMachines().then(() => { setView('machine'); snapshotCommitted(); loadActive(); startSummaryPoll(); });
+  window.addEventListener('wf:machines-changed', ()=>{ if(_summaryShouldPoll()) loadActive(); });
 </script>
 {% endblock %}

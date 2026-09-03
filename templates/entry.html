@@ -322,7 +322,18 @@
 
   loadAll();
   setInterval(tickTimers, 1000);
-  setInterval(refreshMachineStatuses, 10000);
+  // 3s live refresh — skip if user is editing filters/forms or a modal is open.
+  function _entryShouldPoll() {
+    if (document.hidden) return false;
+    if (document.querySelector('.modal-overlay.show')) return false;
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest('.toolbar, header, form, input, select, textarea')) return false;
+    return true;
+  }
+  let _entryTimer = setInterval(() => { if (_entryShouldPoll()) loadAll(); }, 3000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { clearInterval(_entryTimer); _entryTimer = null; }
+    else if (!_entryTimer) _entryTimer = setInterval(() => { if (_entryShouldPoll()) loadAll(); }, 3000);
+  });
 
   // Live cross-tab sync: refresh when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());

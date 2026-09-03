@@ -67,6 +67,8 @@
     if (m) return `${m}m ${pad(s)}s`;
     return `${s}s`;
   }
+  let committedParams = '';
+  let _repAbort=null;
   function params() {
     const p = new URLSearchParams();
     const from = $('fromDate').value;
@@ -83,8 +85,12 @@
     if (q) p.set('search', q);
     return p.toString();
   }
+  function committedQuery(){ return committedParams || params(); }
+  function snapshotReports(){ committedParams = params(); }
   async function loadReports() {
-    const res = await fetch('/api/reports?' + params());
+    try{ if(_repAbort) _repAbort.abort(); }catch(e){}
+    _repAbort=new AbortController();
+    let res; try{ res = await fetch('/api/reports?' + committedQuery(), {cache:'no-store', signal:_repAbort.signal}); }catch(e){ if(e.name==='AbortError') return; throw e; }
     const data = await res.json();
     const events = data.events || [];
 
@@ -137,16 +143,24 @@
     } catch (e) { /* non-fatal */ }
   }
 
-  $('applyBtn').addEventListener('click', loadReports);
-  $('statusFilter').addEventListener('change', loadReports);
-  $('shiftFilter').addEventListener('change', loadReports);
-  $('machineFilter').addEventListener('change', loadReports);
-  $('searchBox').addEventListener('input', loadReports);
+  let _searchTimer=null;
+  $('applyBtn').addEventListener('click', () => { snapshotReports(); loadReports(); });
+  $('statusFilter').addEventListener('change', () => { snapshotReports(); loadReports(); });
+  $('shiftFilter').addEventListener('change', () => { snapshotReports(); loadReports(); });
+  $('machineFilter').addEventListener('change', () => { snapshotReports(); loadReports(); });
+  $('searchBox').addEventListener('input', () => { clearTimeout(_searchTimer); _searchTimer=setTimeout(()=>{ snapshotReports(); loadReports(); }, 300); });
   $('exportBtn').addEventListener('click', () => {
-    window.location.href = '/api/reports/export?' + params();
+    window.location.href = '/api/reports/export?' + committedQuery();
   });
 
+  // 3s committed poll — skip if filter focused or tab hidden
+  function _repShouldPoll(){ if(document.hidden) return false; const a=document.activeElement; if(a && a.closest && a.closest('.toolbar, input, select')) return false; return true; }
+  let _repTimer=null;
+  function startRepPoll(){ if(_repTimer) clearInterval(_repTimer); _repTimer=setInterval(()=>{ if(_repShouldPoll()) loadReports(); },3000); }
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearInterval(_repTimer); _repTimer=null; } else if(!_repTimer) startRepPoll(); });
+
   loadMachines();
-  loadReports();
+  snapshotReports(); loadReports(); startRepPoll();
+  window.addEventListener('wf:machines-changed', ()=>{ if(_repShouldPoll()) loadReports(); });
 </script>
 {% endblock %}

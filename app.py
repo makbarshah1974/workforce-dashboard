@@ -848,16 +848,7 @@ def api_summary():
     by_status = {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0}
 
     if historical and as_of:
-        # Reconstruct each machine's status as of the end of the chosen shift.
-        last_logs = (
-            MachineLog.query
-            .filter(MachineLog.timestamp <= as_of)
-            .order_by(MachineLog.machine_id, MachineLog.timestamp.desc())
-            .all()
-        )
-        status_at = {}
-        for l in last_logs:
-            status_at.setdefault(l.machine_id, l.status)
+        status_at = _statuses_as_of(as_of) or {}
         for m in machines:
             st = status_at.get(m.id, "idle")
             by_status[st] = by_status.get(st, 0) + 1
@@ -867,14 +858,13 @@ def api_summary():
 
     groups = {g.id: g.name for g in Group.query.all()}
     by_group = {}
+    # Batched historical statuses instead of per-machine N+1 query
+    _g_status_at = _statuses_as_of(as_of) if historical and as_of else None
     for m in machines:
         gname = groups.get(m.group_id, "Unassigned")
         by_group.setdefault(gname, {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0})
-        if historical and as_of:
-            last = (MachineLog.query.filter_by(machine_id=m.id)
-                    .filter(MachineLog.timestamp <= as_of)
-                    .order_by(MachineLog.timestamp.desc()).first())
-            st = last.status if last else "idle"
+        if _g_status_at is not None:
+            st = _g_status_at.get(m.id, "idle")
         else:
             st = m.status
         by_group[gname][st] = by_group[gname].get(st, 0) + 1
@@ -885,11 +875,8 @@ def api_summary():
     for m in machines:
         pname = products.get(m.product_id, "Unassigned")
         by_product.setdefault(pname, {"running": 0, "out_of_order": 0, "maintenance": 0, "idle": 0})
-        if historical and as_of:
-            last = (MachineLog.query.filter_by(machine_id=m.id)
-                    .filter(MachineLog.timestamp <= as_of)
-                    .order_by(MachineLog.timestamp.desc()).first())
-            st = last.status if last else "idle"
+        if _g_status_at is not None:
+            st = _g_status_at.get(m.id, "idle")
         else:
             st = m.status
         by_product[pname][st] = by_product[pname].get(st, 0) + 1
@@ -967,7 +954,9 @@ def _accumulate_machine(m, intervals, now):
         before = (MachineLog.query.filter_by(machine_id=m.id)
                   .filter(MachineLog.timestamp < win_start)
                   .order_by(MachineLog.timestamp.desc()).first())
-        start_status = before.status if before else m.status
+        # If no log exists before window (new machine), default to idle — not
+        # the current live status which would overcount running.
+        start_status = before.status if before else "idle"
 
         logs = (MachineLog.query.filter_by(machine_id=m.id)
                 .filter(MachineLog.timestamp >= win_start)
@@ -989,6 +978,79 @@ def _accumulate_machine(m, intervals, now):
             if cur_status in per:
                 per[cur_status] += secs
     return per
+
+
+def _accumulate_machines_batched(machines, intervals, now):
+    """Batched version: 2 queries total instead of 2*N*days.
+
+    Returns {machine_id: per_dict}. Correctness identical to _accumulate_machine.
+    """
+    if not machines or not intervals:
+        return {m.id: {"running": 0, "idle": 0, "out_of_order": 0, "maintenance": 0} for m in machines}
+    m_ids = [m.id for m in machines]
+    m_by_id = {m.id: m for m in machines}
+    # Global window
+    gmin = min(s for s, _ in intervals)
+    gmax = max(e for _, e in intervals)
+    # Fetch once: logs before gmin (last per machine) + logs inside [gmin,gmax]
+    befores = (MachineLog.query
+               .filter(MachineLog.machine_id.in_(m_ids))
+               .filter(MachineLog.timestamp < gmin)
+               .order_by(MachineLog.machine_id, MachineLog.timestamp.desc())
+               .all())
+    start_status = {}
+    for l in befores:
+        start_status.setdefault(l.machine_id, l.status)
+    # default to idle if no history
+    for mid in m_ids:
+        start_status.setdefault(mid, "idle")
+    inside = (MachineLog.query
+              .filter(MachineLog.machine_id.in_(m_ids))
+              .filter(MachineLog.timestamp >= gmin)
+              .filter(MachineLog.timestamp <= gmax)
+              .order_by(MachineLog.timestamp.asc())
+              .all())
+    # Group inside logs per machine sorted asc
+    from collections import defaultdict
+    per_machine_logs = defaultdict(list)
+    for l in inside:
+        per_machine_logs[l.machine_id].append(l)
+    result = {}
+    for mid, m in m_by_id.items():
+        per = {"running": 0, "idle": 0, "out_of_order": 0, "maintenance": 0}
+        logs_sorted = per_machine_logs.get(mid, [])
+        # For each window, walk slice of logs
+        # Use pointer over sorted logs to avoid re-scanning
+        for (win_start, win_end) in intervals:
+            # status at window start: walk forward through logs < win_start
+            # We can compute by scanning logs_sorted but keep pointer per window
+            # Simpler: find start_status for this window — need last log before win_start
+            # Use befores + inside-before-window. Walk quickly:
+            cur_status = start_status[mid]
+            # Advance through logs before win_start to get true status at win_start
+            for l in logs_sorted:
+                if l.timestamp < win_start:
+                    cur_status = l.status
+                else:
+                    break
+            cur_time = win_start
+            for l in logs_sorted:
+                if l.timestamp < win_start:
+                    continue
+                if l.timestamp > win_end:
+                    break
+                if l.timestamp > cur_time:
+                    secs = int((l.timestamp - cur_time).total_seconds())
+                    if cur_status in per:
+                        per[cur_status] += secs
+                cur_status = l.status
+                cur_time = l.timestamp
+            if win_end > cur_time:
+                secs = int((win_end - cur_time).total_seconds())
+                if cur_status in per:
+                    per[cur_status] += secs
+        result[mid] = per
+    return result
 
 
 def _parse_summary_params():
@@ -1078,8 +1140,10 @@ def api_summary_times():
 
     results = []
     totals = {"running": 0, "idle": 0, "out_of_order": 0, "maintenance": 0}
+    # Batched: 2 queries total (was 2*N*days)
+    batched = _accumulate_machines_batched(machines, intervals, now) if machines else {}
     for m in machines:
-        per = _accumulate_machine(m, intervals, now)
+        per = batched.get(m.id) or _accumulate_machine(m, intervals, now)
         for k in totals:
             totals[k] += per[k]
         results.append({
@@ -1125,8 +1189,9 @@ def api_summary_times_export():
     writer = csv.writer(output)
     writer.writerow(["Machine", "Code", "Group", "Product", "Run Time (s)", "Idle Time (s)",
                      "Break Down (s)", "Maintenance (s)", "Total (s)"])
+    batched2 = _accumulate_machines_batched(machines, intervals, now) if machines else {}
     for m in machines:
-        per = _accumulate_machine(m, intervals, now)
+        per = batched2.get(m.id) or _accumulate_machine(m, intervals, now)
         writer.writerow([
             m.name, m.code, groups.get(m.group_id, "Unassigned"),
             products.get(m.product_id, "Unassigned"),
@@ -1168,8 +1233,9 @@ def api_summary_daywise():
     grand = {k: 0 for k in order}
     for (win_start, win_end) in intervals:
         per = {k: 0 for k in order}
+        day_batched = _accumulate_machines_batched(machines, [(win_start, win_end)], now) if machines else {}
         for m in machines:
-            mp = _accumulate_machine(m, [(win_start, win_end)], now)
+            mp = day_batched.get(m.id) or _accumulate_machine(m, [(win_start, win_end)], now)
             for k in order:
                 per[k] += mp[k]
         day_total = sum(per.values())
@@ -1216,8 +1282,9 @@ def api_summary_daywise_export():
                      "Break Down (s)", "Maintenance (s)", "Total (s)"])
     for (win_start, win_end) in intervals:
         per = {k: 0 for k in order}
+        day_batched_exp = _accumulate_machines_batched(machines, [(win_start, win_end)], now) if machines else {}
         for m in machines:
-            mp = _accumulate_machine(m, [(win_start, win_end)], now)
+            mp = day_batched_exp.get(m.id) or _accumulate_machine(m, [(win_start, win_end)], now)
             for k in order:
                 per[k] += mp[k]
         writer.writerow([

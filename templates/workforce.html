@@ -391,6 +391,11 @@
   // it never overwrites the breakdown fields (the field stays user-editable).
   $('wf-total').addEventListener('input', validateTotal);
 
+  // 3s poll — skip if user typing in form or tab hidden
+  function _wfShouldPoll(){ if(document.hidden) return false; const a=document.activeElement; if(a && a.closest && a.closest('form, input, select, textarea')) return false; return true; }
+  let _wfTimer=setInterval(()=>{ if(_wfShouldPoll()){ loadKpis(); loadHistory(); } },3000);
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearInterval(_wfTimer); _wfTimer=null; } else if(!_wfTimer) _wfTimer=setInterval(()=>{ if(_wfShouldPoll()){ loadKpis(); loadHistory(); } },3000); });
+
   loadRecordIntoForm();
   loadKpis();
   loadHistory();
@@ -410,5 +415,6 @@
     loadHistory();
   }
   window.addEventListener('wf:filter-changed', syncFromGlobalFilter);
+  window.addEventListener('wf:machines-changed', ()=>{ if(_wfShouldPoll()){ loadKpis(); loadHistory(); } });
 </script>
 {% endblock %}

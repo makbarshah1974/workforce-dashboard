@@ -72,11 +72,18 @@
     return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
   }
 
+  let _summaryAbort = null;
   async function loadSummary() {
-    const res = await fetch('/api/summary?' + filterQuery());
+    try { if (_summaryAbort) _summaryAbort.abort(); } catch(e) {}
+    _summaryAbort = new AbortController();
+    let res;
+    try {
+      res = await fetch('/api/summary?' + filterQuery(), { cache: 'no-store', signal: _summaryAbort.signal });
+    } catch(e) { if (e.name === 'AbortError') return; throw e; }
     const data = await res.json();
 
-    // KPIs (skip rebuild while a dropdown is open so the refresh doesn't close it)
+    // KPIs: skip rebuild while a dropdown is open so refresh doesn't close it,
+    // and keep previous HTML visible until new data arrives (no blank flash)
     if (!$('kpiGrid').querySelector('.kpi-card.open')) {
       $('kpiGrid').innerHTML = data.kpis.map(k => {
         if (k.type === 'workforce') {
@@ -274,7 +281,20 @@
   const $ = (id) => document.getElementById(id);
   initKpiCards();
   loadSummary();
-  setInterval(loadSummary, 8000);
+  // 3s live refresh — but skip while filter header is focused, a KPI dropdown is open,
+  // or the tab is hidden. Keeps data fresh without wiping draft filter edits.
+  function _dashShouldPoll() {
+    if (document.hidden) return false;
+    if ($('kpiGrid').querySelector('.kpi-card.open')) return false;
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest('.wf-date-input, .wf-shift-btn, .toolbar, header')) return false;
+    return true;
+  }
+  let _dashTimer = setInterval(() => { if (_dashShouldPoll()) loadSummary(); }, 3000);
+  // Pause/resume on visibility
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { clearInterval(_dashTimer); _dashTimer = null; }
+    else if (!_dashTimer) _dashTimer = setInterval(() => { if (_dashShouldPoll()) loadSummary(); }, 3000);
+  });
   setInterval(tickTimers, 1000);
 
   // Live cross-tab sync: refresh when another tab changes machine status.

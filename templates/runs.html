@@ -122,6 +122,8 @@
     return m ? m.status : 'idle';
   }
 
+  let committedRunsQuery='';
+  let _runsAbort=null, _machRunsAbort=null;
   // Query builder: date range + shift + machine (mirrors the Summary page).
   // M/C Status is applied client-side (machine status lives on the Machine, not the run).
   function buildRunsQuery() {
@@ -138,6 +140,8 @@
     if (mstatus) p.set('machine_status', mstatus);
     return p.toString();
   }
+  function snapshotRuns(){ committedRunsQuery = buildRunsQuery(); syncExportLink(); return committedRunsQuery; }
+  function committedQuery(){ return committedRunsQuery || buildRunsQuery(); }
 
   function periodLabel() {
     const f = $('dateFrom').value || '—';
@@ -157,7 +161,9 @@
 
   // Refresh only the run data on the interval (preserves the user's filter selection)
   async function loadRuns() {
-    const r = await fetch('/api/runs?' + buildRunsQuery()).then(x => x.json());
+    try{ if(_runsAbort) _runsAbort.abort(); }catch(e){}
+    _runsAbort=new AbortController();
+    let r; try{ r = await fetch('/api/runs?' + committedQuery(), {cache:'no-store', signal:_runsAbort.signal}).then(x => x.json()); }catch(e){ if(e.name==='AbortError') return; throw e; }
     runs = r.runs;
     render();
   }
@@ -165,7 +171,9 @@
   // Refresh machine statuses (for the M/C Status column) WITHOUT rebuilding
   // the machine filter dropdown, so the user's filter selection is preserved.
   async function refreshMachineStatuses() {
-    const m = await fetch('/api/machines').then(x => x.json());
+    try{ if(_machRunsAbort) _machRunsAbort.abort(); }catch(e){}
+    _machRunsAbort=new AbortController();
+    let m; try{ m = await fetch('/api/machines?' + (typeof filterQuery==='function'?filterQuery():''), {cache:'no-store', signal:_machRunsAbort.signal}).then(x => x.json()); }catch(e){ if(e.name==='AbortError') return; throw e; }
     machines = m.machines;
     render();
   }
@@ -221,8 +229,8 @@
   $('statusFilter').addEventListener('change', render);
   $('machineFilter').addEventListener('change', render);
   $('applyBtn').addEventListener('click', () => {
+    snapshotRuns();
     $('periodLabel').textContent = periodLabel();
-    syncExportLink();
     refreshMachineStatuses().then(loadRuns);
   });
   $('resetBtn').addEventListener('click', () => {
@@ -232,20 +240,31 @@
     $('statusFilter').value = '';
     $('machineFilter').selectedIndex = 0;
     $('periodLabel').textContent = '';
-    syncExportLink();
+    snapshotRuns();
     refreshMachineStatuses().then(loadRuns);
   });
 
-  // Keep the export link in sync with the current filter.
+  // Keep the export link in sync with the committed filter.
   function syncExportLink() {
     const link = document.getElementById('exportBtn');
-    if (link) link.href = '/api/runs/export?' + buildRunsQuery();
+    if (link) link.href = '/api/runs/export?' + committedQuery();
   }
-  syncExportLink();
 
-  loadMachines().then(loadRuns);
-  setInterval(loadRuns, 10000);
-  setInterval(refreshMachineStatuses, 10000);
+  // 3s committed poll — skip if filter focused/modal open/tab hidden
+  function _runsShouldPoll(){ if(document.hidden) return false; if(document.querySelector('.modal-overlay.show')) return false; const a=document.activeElement; if(a && a.closest && a.closest('.toolbar, input, select')) return false; return true; }
+  let _runsTimer=null, _machTimer2=null;
+  function startRunsPoll(){
+    if(_runsTimer) clearInterval(_runsTimer);
+    if(_machTimer2) clearInterval(_machTimer2);
+    _runsTimer=setInterval(()=>{ if(_runsShouldPoll()) loadRuns(); },3000);
+    _machTimer2=setInterval(()=>{ if(_runsShouldPoll()) refreshMachineStatuses(); },3000);
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){ clearInterval(_runsTimer); clearInterval(_machTimer2); _runsTimer=_machTimer2=null; }
+    else if(!_runsTimer) startRunsPoll();
+  });
+
+  loadMachines().then(() => { snapshotRuns(); syncExportLink(); loadRuns(); startRunsPoll(); });
 
   // Live cross-tab sync: refresh when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => refreshMachineStatuses());
