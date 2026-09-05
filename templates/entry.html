@@ -116,6 +116,10 @@
               <option value="night">Night Shift</option>
             </select>
           </div>
+          <div class="field">
+            <label>Note (optional)</label>
+            <textarea id="bulkNote" rows="2" placeholder="Add a note for this bulk update..."></textarea>
+          </div>
           <div class="field bulk-select-all">
             <label><input type="checkbox" id="bulkSelectAll" /> Select / deselect all</label>
           </div>
@@ -391,6 +395,7 @@
     const payload = {
       status: $('bulkStatus').value,
       shift: $('bulkShift').value || null,
+      note: $('bulkNote').value.trim(),
       machine_ids: checked,
       update_runs: true,
     };

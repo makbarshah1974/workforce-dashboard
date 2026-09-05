@@ -139,6 +139,29 @@
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
+  function fmtDuration(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return d ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function statusElapsed(iso) {
+    if (!iso) return '00:00:00';
+    const start = Date.parse(iso);
+    return start ? fmtDuration((Date.now() - start) / 1000) : '00:00:00';
+  }
+
   async function loadMachines() {
     try{ if(typeof _machAbort!=='undefined' && _machAbort) _machAbort.abort(); }catch(e){}
     if(typeof _machAbort!=='undefined') _machAbort=new AbortController();
@@ -171,7 +194,10 @@
     ).join('');
 
     $('machineGrid').innerHTML = list.length
-      ? list.map(m => `
+      ? list.map(m => {
+          const isRunning = runningIds.has(m.id);
+          const showNotes = !isRunning && m.notes && (m.status === 'idle' || m.status === 'maintenance' || m.status === 'out_of_order');
+          return `
         <div class="machine-card status-${m.status}">
           <div class="mc-top">
             <div>
@@ -188,17 +214,23 @@
             <span class="sh-chip" title="Planned day-shift hours">☀ Day <b>${m.day_hours ?? 11}h</b></span>
             <span class="sh-chip" title="Planned night-shift hours">🌙 Night <b>${m.night_hours ?? 11}h</b></span>
           </div>
+          ${showNotes ? `<div class="mc-notes">${esc(m.notes)}</div>` : ''}
+          <div class="mc-run">
+            <span class="mc-st-label">${STATUS_META[m.status]?.label || m.status}</span>
+            <span class="run-timer st-${m.status}" data-start="${m.status_since || ''}">${statusElapsed(m.status_since)}</span>
+          </div>
           <div class="mc-foot">
             <span class="mc-updated">${m.updated_by || '—'} · ${fmtTime(m.updated_at)}</span>
             <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-              ${canEntry ? (runningIds.has(m.id)
+              ${canEntry ? (isRunning
                 ? `<button class="btn small run-stop" data-id="${runByMachine.get(m.id)}">■ Stop</button>`
                 : `<button class="btn small run-start" data-id="${m.id}">▶ Start</button>`) : ''}
               ${canEntry ? `<button class="btn small" data-id="${m.id}">Update</button>` : ''}
               ${canEntry ? `<button class="btn small sh-edit" data-id="${m.id}">Edit Hours</button>` : ''}
             </div>
           </div>
-        </div>`).join('')
+        </div>`;
+        }).join('')
       : '<div class="empty">No machines match.</div>';
 
     document.querySelectorAll('.machine-card .btn.small:not(.run-start):not(.run-stop):not(.sh-edit)').forEach(btn =>
@@ -339,12 +371,21 @@
   });
 
 
+  // Live ticking timers for the current status of every machine
+  function tickTimers() {
+    document.querySelectorAll('.run-timer[data-start]').forEach(el => {
+      const start = Date.parse(el.dataset.start);
+      el.textContent = start ? fmtDuration((Date.now() - start) / 1000) : '00:00:00';
+    });
+  }
+
   // 3s poll — skip if user typing in toolbar or a modal is open or tab hidden
   function _machShouldPoll(){ if(document.hidden) return false; if(document.querySelector('.modal-overlay.show')) return false; const a=document.activeElement; if(a && a.closest && a.closest('.toolbar, input, select')) return false; return true; }
   let _machTimer=setInterval(()=>{ if(_machShouldPoll()) loadMachines(); },3000);
   document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearInterval(_machTimer); _machTimer=null; } else if(!_machTimer) _machTimer=setInterval(()=>{ if(_machShouldPoll()) loadMachines(); },3000); });
 
   loadMachines();
+  setInterval(tickTimers, 1000);
 
   // Live cross-tab sync: reload when another tab changes machine status.
   window.addEventListener('wf:machines-changed', () => loadMachines());

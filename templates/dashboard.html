@@ -216,11 +216,23 @@
     }
     if (!items.length) return '<div class="kpi-empty">No items found.</div>';
     // Simple, flexible name list — one row per item, sized to its content
-    return '<ul class="kpi-list">' + items.map(it => `
+    return '<ul class="kpi-list">' + items.map(it => {
+      // Only show notes for machines in problem states (idle, maintenance, break down)
+      const showNote = it.notes && (it.status === 'out_of_order' || it.status === 'maintenance' || it.status === 'idle');
+      return `
       <li class="kpi-li">
         <span class="kpi-li-main">${it.name || it.code || '—'}</span>
         ${it.product_name ? `<span class="kpi-li-sub">${it.product_name}</span>` : ''}
-      </li>`).join('') + '</ul>';
+        ${showNote ? `<div class="kpi-li-note">${esc(it.notes)}</div>` : ''}
+      </li>`;
+    }).join('') + '</ul>';
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   async function toggleKpi(card) {

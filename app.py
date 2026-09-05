@@ -1344,12 +1344,22 @@ def api_machines():
     groups = {g.id: g.name for g in Group.query.all()}
     products = {p.id: p.name for p in Product.query.all()}
     machines = Machine.query.order_by(Machine.name).all()
+    # Latest status-change timestamp per machine - drives the live "time in
+    # current status" timer on the machine cards (resets to 00:00:00 whenever a
+    # status is set/changed). Falls back to updated_at when no log exists yet.
+    status_since = {}
+    for mid, ts in (db.session.query(MachineLog.machine_id,
+                                     db.func.max(MachineLog.timestamp))
+                    .group_by(MachineLog.machine_id).all()):
+        status_since[mid] = ts.isoformat() if ts else None
     result = []
     for m in machines:
         d = m.to_dict(group_name=groups.get(m.group_id),
                       product_name=products.get(m.product_id))
         if status_at is not None:
             d["status"] = status_at.get(m.id, "idle")
+        d["status_since"] = status_since.get(m.id) or (
+            m.updated_at.isoformat() if m.updated_at else None)
         result.append(d)
     return jsonify({"machines": result})
 
@@ -1402,7 +1412,7 @@ def api_machine_status(mid):
         shift = shift_of(now_uae())
     old_status = m.status
     m.status = new_status
-    m.notes = note or m.notes
+    m.notes = note  # Always replace notes on status change (empty if not provided)
     m.updated_by = session.get("display_name", session.get("username", "Unknown"))
     db.session.add(m)
     log = MachineLog(machine_id=m.id, status=new_status, note=note,
@@ -1460,6 +1470,7 @@ def api_machines_bulk_start():
     count = 0
     for m in Machine.query.filter_by(status="idle").all():
         m.status = "running"
+        m.notes = ""  # Clear notes on bulk start
         m.updated_by = actor
         m.updated_at = now
         db.session.add(m)
@@ -1488,6 +1499,7 @@ def api_machines_bulk_stop():
     count = 0
     for m in Machine.query.filter_by(status="running").all():
         m.status = "idle"
+        m.notes = ""  # Clear notes on bulk stop
         m.updated_by = actor
         m.updated_at = now
         db.session.add(m)
@@ -1532,20 +1544,24 @@ def api_machines_bulk_update():
     if not machine_ids:
         return jsonify({"error": "No machines selected"}), 400
     update_runs = bool(data.get("update_runs", False))
+    bulk_note = data.get("note", "").strip()  # Optional note for all machines
     actor = session.get("display_name", session.get("username", "Unknown"))
     now = now_uae()
     count = 0
     for m in Machine.query.filter(Machine.id.in_(machine_ids)).all():
         old_status = m.status
         m.status = status
+        m.notes = bulk_note  # Apply bulk note to all (empty if not provided)
         m.updated_by = actor
         m.updated_at = now
         db.session.add(m)
+        # Use bulk_note in log if provided, otherwise default message
+        log_note = bulk_note if bulk_note else "Bulk update"
         db.session.add(MachineLog(
-            machine_id=m.id, status=status, note="Bulk update",
+            machine_id=m.id, status=status, note=log_note,
             updated_by=actor, shift=shift or shift_of(now)))
         if old_status != status:
-            _sync_production_run(m, status, actor, shift or shift_of(now), now, "Bulk update")
+            _sync_production_run(m, status, actor, shift or shift_of(now), now, log_note)
         count += 1
     if count:
         audit_log("machine_bulk",
@@ -2103,6 +2119,13 @@ def api_users_update(uid):
             return jsonify({"error": "Cannot change the role of the last admin"}), 400
         if "is_active" in data and not data["is_active"] and active_admins <= 1:
             return jsonify({"error": "Cannot deactivate the last admin"}), 400
+    if "username" in data:
+        new_username = str(data["username"]).strip()
+        if not new_username:
+            return jsonify({"error": "Username cannot be empty"}), 400
+        if User.query.filter(User.username == new_username, User.id != u.id).first():
+            return jsonify({"error": "Username already exists"}), 400
+        u.username = new_username
     if "display_name" in data:
         u.display_name = str(data["display_name"]).strip() or u.username
     if "role" in data:
